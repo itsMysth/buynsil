@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Listings Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+
+  <h1 class="text-2xl font-bold mb-6">All Listings</h1>
+  <div id="listingsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+  <!-- Edit Modal -->
+<div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-2xl font-bold">Edit Item</h3>
+              <button class="close-modal text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form class="edit-item-form" data-id="${item.id}">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                  <input type="text" name="name" value="${item.name}" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                  <input type="number" name="price" value="${item.price}" step="0.01" min="0" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                
+                <!-- Main Category Dropdown -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Main Category</label>
+                  <select name="mainCategory" class="w-full px-3 py-2 border border-gray-300 rounded-md" onchange="updateSubcategories(this)">
+                    <option value="">Select a category</option>
+                    <option value="Electronics" ${item.mainCategory === 'Electronics' ? 'selected' : ''}>Electronics</option>
+                    <option value="Home Appliances" ${item.mainCategory === 'Home Appliances' ? 'selected' : ''}>Home Appliances</option>
+                    <option value="Toys, Games & Collectibles" ${item.mainCategory === 'Toys, Games & Collectibles' ? 'selected' : ''}>Toys, Games & Collectibles</option>
+                    <option value="Clothing" ${item.mainCategory === 'Clothing' ? 'selected' : ''}>Clothing</option>
+                    <option value="Shoes" ${item.mainCategory === 'Shoes' ? 'selected' : ''}>Shoes</option>
+                    <option value="Mobile Gadgets" ${item.mainCategory === 'Mobile Gadgets' ? 'selected' : ''}>Mobile Gadgets</option>
+                    <option value="Laptops & Computers" ${item.mainCategory === 'Laptops & Computers' ? 'selected' : ''}>Laptops & Computers</option>
+                  </select>
+                </div>
+                
+                <!-- Subcategory Dropdown -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                  <select name="subCategory" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">Select a subcategory</option>
+                    ${getSubcategoryOptions(item.mainCategory, item.subCategory)}
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="Active" ${item.status === 'Active' ? 'selected' : ''}>Active</option>
+                    <option value="Sold" ${item.status === 'Sold' ? 'selected' : ''}>Sold</option>
+                    <option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea name="description" rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md">${item.description || ''}</textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                  <button type="button" class="close-modal px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+  <script>
+    // Load listings from backend
+    async function fetchListings() {
+      try {
+        const res = await fetch('/api/listings');
+        const listings = await res.json();
+
+        const container = document.getElementById('listingsContainer');
+        container.innerHTML = '';
+
+        listings.forEach(listing => {
+          const card = document.createElement('div');
+          card.className = 'bg-white p-4 rounded shadow';
+
+          card.innerHTML = `
+            <h3 class="text-lg font-semibold mb-1">${listing.title}</h3>
+            <p class="text-sm text-gray-700 mb-1">${listing.description}</p>
+            <p class="text-sm text-gray-500 mb-1">Price: $${listing.price}</p>
+            <p class="text-sm text-gray-500 mb-1">Main Category: ${listing.mainCategory}</p>
+            <p class="text-sm text-gray-500 mb-2">Subcategory: ${listing.subCategory}</p>
+            <button onclick="openEditModal(${listing.id})" class="text-blue-500 hover:underline">Edit</button>
+          `;
+
+          container.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error('Error loading listings:', error);
+        alert('Failed to load listings');
+      }
+    }
+
+    // Open edit modal and populate form
+    async function openEditModal(id) {
+      try {
+        const res = await fetch(`/api/listings/${id}`);
+        const listing = await res.json();
+
+        document.getElementById('editId').value = listing.id;
+        document.getElementById('editTitle').value = listing.title;
+        document.getElementById('editDescription').value = listing.description;
+        document.getElementById('editPrice').value = listing.price;
+        document.getElementById('editMainCategory').value = listing.mainCategory;
+        document.getElementById('editSubCategory').value = listing.subCategory;
+
+        document.getElementById('editModal').classList.remove('hidden');
+      } catch (error) {
+        console.error('Failed to load listing:', error);
+        alert('Could not load listing for edit');
+      }
+    }
+
+    // Submit updated listing
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('editId').value;
+      const title = document.getElementById('editTitle').value;
+      const description = document.getElementById('editDescription').value;
+      const price = document.getElementById('editPrice').value;
+      const mainCategory = document.getElementById('editMainCategory').value;
+      const subCategory = document.getElementById('editSubCategory').value;
+
+      try {
+        const res = await fetch(`/api/listings/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            price,
+            mainCategory,
+            subCategory
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to update');
+
+        closeEditModal();
+        fetchListings(); // Refresh listings
+      } catch (error) {
+        console.error('Error updating listing:', error);
+        alert('Failed to update listing');
+      }
+    });
+
+    // Close the modal
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    // Initial load
+    window.onload = fetchListings;
+  </script>
+</body>
+</html>
