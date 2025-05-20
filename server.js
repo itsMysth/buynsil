@@ -179,6 +179,29 @@ app.post('/items/:id', (req, res) => {
   });
 });
 
+app.get('/chat/messages', async (req, res) => {
+  const senderId = req.session.user.id
+  const receiverId = req.query.receiverId;
+
+  if (!senderId) return res.status(401).json({ error: 'Unauthorized' });
+  if (!receiverId) return res.status(400).json({ error: 'receiverId is required' });
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT *, ? AS current_user_id 
+      FROM messages 
+      WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+      ORDER BY timestamp ASC`,
+      [senderId, senderId, receiverId, receiverId, senderId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
 app.get('/api/messages', (req, res) => {
   const userId = req.session.user.id
 

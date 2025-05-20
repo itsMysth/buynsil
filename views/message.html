@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="h-full" lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -57,9 +57,9 @@
         }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="h-screen flex flex-col">
     <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-10 bg-white shadow-sm">
+    <header class="h-16 bg-white shadow z-10">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <svg class="h-10 w-auto" viewBox="0 0 340 211" xmlns="http://www.w3.org/2000/svg">
@@ -102,9 +102,9 @@
         </div>
     </header>
 
-    <div class="flex">
+    <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <aside class="sidebar w-64 min-h-screen hidden md:block">
+        <aside class="sidebar w-64">
             <nav class="p-4">
                 <ul class="space-y-2 mt-6">
                     <li>
@@ -167,55 +167,159 @@
                 </div>
             </nav>
         </aside>
-
         <!-- Main Content -->
-        <main class="flex-1 p-6 bg-gray-50">
-            <div class="container mx-auto">
-                <!-- Page Header -->
-                <div class="bg-primary-50 border-b border-black flex-col md:flex-row justify-between items-start md:items-center mb-8">
-                    <div>
-                        <h1 class="p-4 text-2xl font-bold text-gray-900">Messages</h1>
-                    </div>
+        <main class="w-full flex-1 flex flex-col ">
+                <!-- Header -->
+                <div id="header" class="bg-primary-50 border-b border-black flex-col justify-between items-start mb-2">
+                    <h1 id="name" class="p-4 text-2xl font-bold text-gray-900">Messages</h1>
                 </div>
-            </div>
-            <div class="flex items-start space-x-3">
-                <div id="messageList" class="w-full bg-white rounded-lg shadow p-4 space-y-4 ">
+                <!-- Message List Container -->
+                <div id="messageList" class="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-gray-50">
+                    <!-- messages go here -->
                 </div>
-            </div>
-        </main> 
+        </main>
     </div>
 
     <script>
+    let currentUserId = null;
+    async function fetchCurrentUserId() {
+    try {
+        const res = await fetch('/get-session-data', {
+        credentials: 'include'
+        });
+
+        if (!res.ok) throw new Error('Not logged in');
+
+        const user = await res.json();
+        currentUserId = user.id; // save this for your use
+        return user.id;
+    } catch (err) {
+        console.error('Failed to fetch session user:', err);
+        return null;
+    }
+    }
     fetchMessages();
     async function fetchMessages() {
-    const res = await fetch('http://localhost:3000/api/messages', {
-      credentials: 'include'
+        const res = await fetch('http://localhost:3000/api/messages', {
+        credentials: 'include'
+        });
+
+        const users = await res.json();
+        const container = document.getElementById('messageList');
+        container.innerHTML = ''; // Clear old messages
+
+        if (users.length === 0) {
+        container.innerHTML = `<p class="text-gray-500">No messages found.</p>`;
+        return;
+        }
+
+        users.forEach(user => {
+            const button = document.createElement('button');
+            button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-50';
+
+            button.innerHTML = `
+                <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                <div class="flex-1">
+                <div class="font-medium text-gray-900">${user.name}</div>
+                <div class="text-sm text-gray-500 truncate">${user.last_message}</div>
+                </div>
+            `;
+
+            button.addEventListener('click', () => {
+                loadChat(user.user_id, user.name); // or use history.pushState + loadChat if using History API
+            });
+
+            container.appendChild(button);
     });
-
-    const users = await res.json();
-    const container = document.getElementById('messageList');
-    container.innerHTML = ''; // Clear old messages
-
-    if (users.length === 0) {
-      container.innerHTML = `<p class="text-gray-500">No messages found.</p>`;
-      return;
     }
 
-    users.forEach(user => {
-      const div = document.createElement('div');
-      div.className = 'flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-50';
+    async function loadChat(receiverId, name) {
+    await fetchCurrentUserId();
+    const header = document.getElementById('header');
 
-      div.innerHTML = `
-        <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
-        <div class="flex-1">
-          <div class="font-medium text-gray-900">${user.name}</div>
-          <div class="text-sm text-gray-500 truncate">${user.last_message}</div>
-        </div>
-      `;
+    header.innerHTML = `
+    <div class="flex items-center p-4">
+        <a href="/messages"><img src="/public/uploads/arrow.png" alt="Back" class="w-6 h-6" /></a>
+        <h1 class="ml-4 text-2xl font-bold text-gray-900">${name}</h1>
+    </div>
+    `;
+    try {
+        const response = await fetch(`/chat/messages?receiverId=${receiverId}`, {
+        method: 'GET',
+        credentials: 'include'
+        });
 
-      container.appendChild(div);
-    });
-  }
+        const messages = await response.json();
+        const messageList = document.getElementById('messageList');
+        const main = document.querySelector('main');
+        messageList.innerHTML = ''; // clear old messages
+
+        messages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        const isCurrentUser = msg.sender_id === msg.current_user_id;
+
+        messageDiv.className = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
+        messageDiv.innerHTML = `
+            <div class="max-w-xs ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
+            ${msg.content}
+            </div>
+        `;
+        messageList.appendChild(messageDiv);
+        });
+
+        // Remove existing form if any
+        const existingForm = document.getElementById('chatForm');
+        if (existingForm) {
+        existingForm.remove();
+        }
+
+        // Create and append the form
+        const form = document.createElement('form');
+        form.id = 'chatForm';
+        form.className = 'flex items-center p-4 border-t bg-white';
+        form.innerHTML = `
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Type your message..."
+            class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+        />
+        <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
+        >
+            Send
+        </button>
+        `;
+        main.appendChild(form);
+
+        // ✅ Form submit handler that uses outer receiverId
+        form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('messageInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        await fetch('/chat/send', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+            'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ receiverId, content }) // ✅ uses passed receiverId
+        });
+
+        input.value = '';
+        loadChat(receiverId); // reload messages
+        });
+
+    } catch (err) {
+        console.error('Failed to load chat:', err);
+    }
+}
+
+
 
     </script>
 
