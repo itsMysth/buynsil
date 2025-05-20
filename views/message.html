@@ -174,7 +174,7 @@
                     <h1 id="name" class="p-4 text-2xl font-bold text-gray-900">Messages</h1>
                 </div>
                 <!-- Message List Container -->
-                <div id="messageList" class="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-gray-50">
+                <div id="messageList" class="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-white">
                     <!-- messages go here -->
                 </div>
         </main>
@@ -215,7 +215,7 @@
 
         users.forEach(user => {
             const button = document.createElement('button');
-            button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-50';
+            button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
             button.innerHTML = `
                 <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
