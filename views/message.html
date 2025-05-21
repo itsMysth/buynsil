@@ -215,6 +215,7 @@
     }
 
     async function fetchMessages() {
+        await fetchCurrentUserId();
         const res = await fetch('http://localhost:3000/api/messages', {
         credentials: 'include'
         });
@@ -236,7 +237,9 @@
                 <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
                 <div class="flex-1">
                 <div class="font-medium text-gray-900">${user.name}</div>
-                <div class="text-sm text-gray-500 truncate">${user.last_message}</div>
+                <div class="text-sm text-gray-500 truncate">
+                    ${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}
+                </div>
                 </div>
             `;
 

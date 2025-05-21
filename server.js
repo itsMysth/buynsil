@@ -204,6 +204,7 @@ app.get('/chat/messages', async (req, res) => {
   const senderId = req.session.user.id
   const receiverId = req.query.receiverId;
 
+
   if (!senderId) return res.status(401).json({ error: 'Unauthorized' });
   if (!receiverId) return res.status(400).json({ error: 'receiverId is required' });
 
@@ -215,7 +216,6 @@ app.get('/chat/messages', async (req, res) => {
       ORDER BY timestamp ASC`,
       [senderId, senderId, receiverId, receiverId, senderId]
     );
-
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -224,32 +224,35 @@ app.get('/chat/messages', async (req, res) => {
 });
 
 app.get('/api/messages', (req, res) => {
-  const userId = req.session.user.id
+  const userId = req.session.user.id;
 
   if (!userId) return res.status(401).json({ error: 'Not logged in' });
 
-  const query = `
-    SELECT 
-      u.id AS user_id,
-      u.name,
-      m.content AS last_message,
-      m.timestamp AS last_timestamp
-    FROM messages m
-    JOIN users u ON u.id = m.sender_id
-    WHERE m.receiver_id = ?
-      AND m.timestamp = (
-        SELECT MAX(m2.timestamp)
-        FROM messages m2
-        WHERE m2.sender_id = m.sender_id
-          AND m2.receiver_id = m.receiver_id
-      )
-    ORDER BY m.timestamp DESC
-  `;
+const query = `
+  SELECT 
+    u.id AS user_id,
+    u.name,
+    m.content AS last_message,
+    m.timestamp AS last_timestamp,
+    m.sender_id,
+    m.receiver_id
+  FROM messages m
+  JOIN users u ON 
+    (u.id = IF(m.sender_id = ?, m.receiver_id, m.sender_id))
+  WHERE (m.sender_id = ? OR m.receiver_id = ?)
+    AND m.timestamp = (
+      SELECT MAX(m2.timestamp)
+      FROM messages m2
+      WHERE (m2.sender_id = m.sender_id AND m2.receiver_id = m.receiver_id)
+         OR (m2.sender_id = m.receiver_id AND m2.receiver_id = m.sender_id)
+    )
+  ORDER BY m.timestamp DESC
+`;
 
-  db.query(query, [userId], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
+db.query(query, [userId, userId, userId], (err, results) => {
+  if (err) return res.status(500).json({ error: err.message });
+  res.json(results);
+});
 });
 
 app.get('/api/listings', (req, res) => {
