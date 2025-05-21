@@ -60,6 +60,10 @@ app.get('/messages', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'message.html'));
 });
 
+app.get('/messages/:seller_id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'message.html'));
+});
+
 app.get('/success', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'success.html'));
 });
@@ -177,6 +181,23 @@ app.post('/items/:id', (req, res) => {
     // Redirect after successful update
     res.redirect('/useritems');
   });
+});
+
+app.post('/chat/send', async (req, res) => {
+  const senderId = req.session.user.id
+  const { receiverId, content } = req.body;
+
+  if (!senderId || !receiverId || !content) {
+    return res.status(400).json({ error: 'Missing data' });
+  }
+
+  // Save to DB
+  await db.query(
+    'INSERT INTO messages (sender_id, receiver_id, content, timestamp) VALUES (?, ?, ?, NOW())',
+    [senderId, receiverId, content]
+  );
+
+  res.status(200).json({ success: true });
 });
 
 app.get('/chat/messages', async (req, res) => {

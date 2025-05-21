@@ -181,6 +181,21 @@
     </div>
 
     <script>
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+        const pathParts = window.location.pathname.split('/');
+        const sellerId = pathParts[pathParts.length - 1]; // gets the seller ID from the path
+        const sellerName = new URLSearchParams(window.location.search).get('name');
+
+        if (sellerId && sellerName) {
+            // If both are present, immediately load the conversation
+            await loadChat(sellerId, sellerName);
+        } else {
+            // Otherwise, show the messages list like normal
+            await fetchMessages();
+        }
+        });
+
     let currentUserId = null;
     async function fetchCurrentUserId() {
     try {
@@ -191,14 +206,14 @@
         if (!res.ok) throw new Error('Not logged in');
 
         const user = await res.json();
-        currentUserId = user.id; // save this for your use
+        currentUserId = user.id;
         return user.id;
     } catch (err) {
         console.error('Failed to fetch session user:', err);
         return null;
     }
     }
-    fetchMessages();
+
     async function fetchMessages() {
         const res = await fetch('http://localhost:3000/api/messages', {
         credentials: 'include'
@@ -234,92 +249,93 @@
     }
 
     async function loadChat(receiverId, name) {
-    await fetchCurrentUserId();
-    const header = document.getElementById('header');
+        await fetchCurrentUserId();
+        const header = document.getElementById('header');
 
-    header.innerHTML = `
-    <div class="flex items-center p-4">
-        <a href="/messages"><img src="/public/uploads/arrow.png" alt="Back" class="w-6 h-6" /></a>
-        <h1 class="ml-4 text-2xl font-bold text-gray-900">${name}</h1>
-    </div>
-    `;
-    try {
-        const response = await fetch(`/chat/messages?receiverId=${receiverId}`, {
-        method: 'GET',
-        credentials: 'include'
-        });
-
-        const messages = await response.json();
-        const messageList = document.getElementById('messageList');
-        const main = document.querySelector('main');
-        messageList.innerHTML = ''; // clear old messages
-
-        messages.forEach(msg => {
-        const messageDiv = document.createElement('div');
-        const isCurrentUser = msg.sender_id === msg.current_user_id;
-
-        messageDiv.className = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
-        messageDiv.innerHTML = `
-            <div class="max-w-xs ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
-            ${msg.content}
-            </div>
+        header.innerHTML = `
+        <div class="flex items-center p-4">
+            <a href="/messages"><img src="/public/uploads/arrow.png" alt="Back" class="w-6 h-6" /></a>
+            <h1 class="ml-4 text-2xl font-bold text-gray-900">${name}</h1>
+        </div>
         `;
-        messageList.appendChild(messageDiv);
-        });
+        try {
+            const response = await fetch(`/chat/messages?receiverId=${receiverId}`, {
+            method: 'GET',
+            credentials: 'include'
+            });
 
-        // Remove existing form if any
-        const existingForm = document.getElementById('chatForm');
-        if (existingForm) {
-        existingForm.remove();
+            const messages = await response.json();
+            const messageList = document.getElementById('messageList');
+            const main = document.querySelector('main');
+            messageList.innerHTML = ''; // clear old messages
+
+            messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            const isCurrentUser = msg.sender_id === msg.current_user_id;
+
+            messageDiv.className = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
+            messageDiv.innerHTML = `
+                <div class="max-w-xs ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
+                ${msg.content}
+                </div>
+            `;
+            messageList.appendChild(messageDiv);
+            });
+            setTimeout(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            }, 0);
+
+            // Remove existing form if any
+            const existingForm = document.getElementById('chatForm');
+            if (existingForm) {
+            existingForm.remove();
+            }
+
+            // Create and append the form
+            const form = document.createElement('form');
+            form.id = 'chatForm';
+            form.className = 'flex items-center p-4 border-t bg-white';
+            form.innerHTML = `
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Type your message..."
+                class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+            />
+            <button
+                type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
+            >
+                Send
+            </button>
+            `;
+            main.appendChild(form);
+
+            // ✅ Form submit handler that uses outer receiverId
+            form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content) return;
+
+            await fetch('/chat/send', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ receiverId, content }) // ✅ uses passed receiverId
+            });
+
+            input.value = '';
+            loadChat(receiverId, name); // reload messages
+            });
+
+        } catch (err) {
+            console.error('Failed to load chat:', err);
         }
-
-        // Create and append the form
-        const form = document.createElement('form');
-        form.id = 'chatForm';
-        form.className = 'flex items-center p-4 border-t bg-white';
-        form.innerHTML = `
-        <input
-            type="text"
-            id="messageInput"
-            placeholder="Type your message..."
-            class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-        />
-        <button
-            type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
-        >
-            Send
-        </button>
-        `;
-        main.appendChild(form);
-
-        // ✅ Form submit handler that uses outer receiverId
-        form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const input = document.getElementById('messageInput');
-        const content = input.value.trim();
-        if (!content) return;
-
-        await fetch('/chat/send', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-            'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ receiverId, content }) // ✅ uses passed receiverId
-        });
-
-        input.value = '';
-        loadChat(receiverId); // reload messages
-        });
-
-    } catch (err) {
-        console.error('Failed to load chat:', err);
-    }
 }
-
-
 
     </script>
 

@@ -389,7 +389,7 @@
                         </div>
                         
                         <div class="flex justify-end space-x-3">
-                            <button class="close-modal px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                            <button class="contact-seller px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
                                 Contact Seller
                             </button>
                         </div>
@@ -399,9 +399,16 @@
             
             document.body.appendChild(modal);
             
-            // Close modal handlers
             modal.querySelectorAll('.close-modal').forEach(btn => {
-                btn.addEventListener('click', () => modal.remove());
+                btn.addEventListener('click', () => {
+                    modal.remove();
+                });
+            });
+
+            modal.querySelectorAll('.contact-seller').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    window.location.href = `/messages/${item.seller_id}?name=${item.seller_name}`;
+                });
             });
         }
 
