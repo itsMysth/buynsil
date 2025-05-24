@@ -464,6 +464,51 @@ app.post('/register', async (req, res) => {
     });
 });
 
+// Save item
+app.post('/api/saved-items/:item_id', (req, res) => {
+    const userId = req.session.user.id;
+    const itemId = req.params.item_id;
+
+    const sql = `
+      INSERT INTO saveditems (user_id, item_id, saved_at)
+      VALUES (?, ?, NOW())
+      ON DUPLICATE KEY UPDATE saved_at = NOW()
+    `;
+
+    db.query(sql, [userId, itemId], (err) => {
+        if (err) return res.status(500).json({ error: 'Save failed' });
+        res.sendStatus(200);
+    });
+});
+
+// Unsave item
+app.delete('/api/saved-items/:item_id', (req, res) => {
+    const userId = req.session.user.id;
+    const itemId = req.params.item_id;
+
+    db.query(
+        'DELETE FROM saveditems WHERE user_id = ? AND item_id = ?',
+        [userId, itemId],
+        (err) => {
+            if (err) return res.status(500).json({ error: 'Delete failed' });
+            res.sendStatus(200);
+        }
+    );
+});
+
+// Get all saved item IDs for the user
+app.get('/api/saved-items', (req, res) => {
+    const userId = req.session.user.id;
+
+    db.query(
+        'SELECT item_id FROM saveditems WHERE user_id = ?',
+        [userId],
+        (err, results) => {
+            if (err) return res.status(500).json({ error: 'Fetch failed' });
+            res.json(results.map(r => r.item_id));
+        }
+    );
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
