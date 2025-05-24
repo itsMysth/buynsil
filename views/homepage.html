@@ -316,22 +316,6 @@
             
             return itemElement;
         }
-
-        // Toggle save item
-        function toggleSaveItem(item) {
-            let savedItems = JSON.parse(localStorage.getItem('savedItems')) || [];
-            const itemIndex = savedItems.findIndex(savedItem => savedItem.id === item.id);
-            
-            if (itemIndex === -1) {
-                // Item not saved, add it
-                savedItems.push(item);
-            } else {
-                // Item already saved, remove it
-                savedItems.splice(itemIndex, 1);
-            }
-            
-            localStorage.setItem('savedItems', JSON.stringify(savedItems));
-        }
         
         function formatDate(dateString) {
             const date = new Date(dateString);
