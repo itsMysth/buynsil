@@ -556,6 +556,105 @@ app.get('/api/saved-items/user', (req, res) => {
   });
 });
 
+app.get('/api/saved-items/user/sort', (req, res) => {
+  const userId = req.session.user.id;
+  const sortBy = req.query.by || 'recent';
+
+  // Define sort clause based on sortBy param
+  let sortClause = '';
+  switch (sortBy) {
+    case 'price-low':
+      sortClause = 'ORDER BY l.price ASC';
+      break;
+    case 'price-high':
+      sortClause = 'ORDER BY l.price DESC';
+      break;
+    case 'newest':
+      sortClause = 'ORDER BY l.dateAdded DESC';
+      break;
+    case 'recent':
+    default:
+      sortClause = 'ORDER BY s.saved_at DESC';
+      break;
+  }
+
+  const query = `
+    SELECT 
+      l.item_id,
+      l.seller_id,
+      l.item_name,
+      l.price,
+      l.image,
+      l.category,
+      l.seccategory,
+      l.description,
+      l.status,
+      l.dateAdded,
+      s.saved_at,
+      u.name AS seller_name
+    FROM saveditems s
+    JOIN listings l ON s.item_id = l.item_id
+    JOIN users u ON l.seller_id = u.id
+    WHERE s.user_id = ?
+    ${sortClause}
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching sorted saved items:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    res.json(results);
+  });
+});
+
+
+app.get('/api/saved-items/user/search', (req, res) => {
+  const userId = req.session.user.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Not logged in' });
+  }
+
+  const searchTerm = req.query.term || '';
+  const searchPattern = `%${searchTerm}%`;
+
+  const query = `
+    SELECT 
+      l.item_id,
+      l.seller_id,
+      l.item_name,
+      l.price,
+      l.image,
+      l.category,
+      l.seccategory,
+      l.description,
+      l.status,
+      l.dateAdded,
+      s.saved_at,
+      u.name AS seller_name
+    FROM saveditems s
+    JOIN listings l ON s.item_id = l.item_id
+    JOIN users u ON l.seller_id = u.id
+    WHERE s.user_id = ?
+      AND (
+        l.item_name LIKE ?
+        OR l.category LIKE ?
+        OR l.seccategory LIKE ?
+        OR l.description LIKE ?
+      )
+    ORDER BY s.saved_at DESC
+  `;
+
+  db.query(query, [userId, searchPattern, searchPattern, searchPattern, searchPattern], (err, results) => {
+    if (err) {
+      console.error('Error fetching saved items with search:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+    console.log(results);
+    res.json(results);
+  });
+});
+
 
 // Unsave item
 app.delete('/api/saved-items/:item_id', (req, res) => {

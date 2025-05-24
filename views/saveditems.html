@@ -337,14 +337,15 @@
         async function filterSavedItems(searchTerm) {
             const savedContainer = document.getElementById('saved-container');
             const emptyState = document.getElementById('empty-state');
-            
+
             try {
-                const userId = getCurrentUserId();
-                const response = await fetch(`/api/saved-items/${userId}/search?term=${encodeURIComponent(searchTerm)}`);
+                const response = await fetch(`/api/saved-items/user/search?term=${encodeURIComponent(searchTerm)}`, {
+                    credentials: 'include' // make sure cookies/session are sent
+                });
                 const filteredItems = await response.json();
 
                 savedContainer.innerHTML = ''; // Clear existing items
-                
+
                 if (filteredItems.length === 0) {
                     savedContainer.classList.add('hidden');
                     emptyState.classList.remove('hidden');
@@ -355,7 +356,7 @@
 
                 emptyState.classList.add('hidden');
                 savedContainer.classList.remove('hidden');
-                
+
                 filteredItems.forEach(item => {
                     const itemElement = createSavedItemElement(item);
                     savedContainer.appendChild(itemElement);
@@ -368,11 +369,11 @@
             }
         }
 
+
         // Sort saved items
         async function sortSavedItems(sortBy) {
             try {
-                const userId = getCurrentUserId();
-                const response = await fetch(`/api/saved-items/${userId}/sort?by=${encodeURIComponent(sortBy)}`);
+                const response = await fetch(`/api/saved-items/user/sort?by=${encodeURIComponent(sortBy)}`);
                 const sortedItems = await response.json();
 
                 const savedContainer = document.getElementById('saved-container');
