@@ -261,7 +261,7 @@
                 }
 
                 // Fetch saved items from the database
-                const response = await fetch(`/api/saved-items/${userId}`);
+                const response = await fetch(`/api/saved-items/user`);
                 const savedItems = await response.json();
 
                 if (savedItems.length === 0) {
@@ -298,7 +298,7 @@
                         `<img src="${item.image}" alt="${item.item_name}" class="h-full w-full object-contain p-4">` : 
                         `<span class="text-gray-500">Product Image</span>`}
                     <button class="save-btn absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100" data-id="${item.item_id}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 heart-icon saved fill-red-500 text-red-500" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 heart-icon saved fill-red-500 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                     </button>
@@ -346,12 +346,7 @@
                 showProductDetails(item);
             });
             
-            // Make the whole card clickable
-            itemElement.addEventListener('click', function(e) {
-                if (!e.target.closest('.save-btn') && !e.target.closest('.view-btn')) {
-                    showProductDetails(item);
-                }
-            });
+
             
             return itemElement;
         }
@@ -444,14 +439,6 @@
                                 <p class="text-sm text-gray-500">Category</p>
                                                                 <p class="font-medium">${item.category || 'General'}${item.seccategory ? ' > ' + item.seccategory : ''}</p>
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Condition</p>
-                                <p class="font-medium">${item.condition || 'Not specified'}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Location</p>
-                                <p class="font-medium">${item.location || 'Not specified'}</p>
-                            </div>
                         </div>
                         
                         <div class="mb-6">
@@ -459,15 +446,9 @@
                             <p class="text-gray-700">${item.description || 'No description provided.'}</p>
                         </div>
                         
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-end items-center">
                             <button class="contact-btn bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
                                 Contact Seller
-                            </button>
-                            <button class="save-btn flex items-center text-gray-600 hover:text-red-500" data-id="${item.item_id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 heart-icon ${item.is_saved ? 'saved' : ''}" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                                ${item.is_saved ? 'Saved' : 'Save'}
                             </button>
                         </div>
                     </div>
@@ -479,55 +460,10 @@
                 document.body.removeChild(modal);
             });
             
-            modal.querySelector('.save-btn').addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                try {
-                    const userId = getCurrentUserId();
-                    const heartIcon = this.querySelector('.heart-icon');
-                    
-                    if (heartIcon.classList.contains('saved')) {
-                        // Remove from saved items
-                        await fetch(`/api/saved-items/${userId}/${item.item_id}`, {
-                            method: 'DELETE'
-                        });
-                        heartIcon.classList.remove('saved');
-                        heartIcon.classList.remove('fill-red-500');
-                        heartIcon.classList.remove('text-red-500');
-                        this.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 heart-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                            Save
-                        `;
-                    } else {
-                        // Add to saved items
-                        await fetch(`/api/saved-items/${userId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ item_id: item.item_id })
-                        });
-                        heartIcon.classList.add('saved');
-                        heartIcon.classList.add('fill-red-500');
-                        heartIcon.classList.add('text-red-500');
-                        this.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 heart-icon saved fill-red-500 text-red-500" viewBox="0 0 20 20" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                            Saved
-                        `;
-                    }
-                } catch (error) {
-                    console.error('Error toggling saved status:', error);
-                }
-            });
-            
-            modal.querySelector('.contact-btn').addEventListener('click', () => {
-                // Redirect to messages page with the seller
-                window.location.href = `/views/message.html?seller_id=${item.seller_id}&item_id=${item.item_id}`;
+            modal.querySelectorAll('.contact-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    window.location.href = `/messages/${item.seller_id}?name=${item.seller_name}`;
+                });
             });
             
             // Close modal when clicking outside

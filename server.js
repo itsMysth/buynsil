@@ -481,6 +481,42 @@ app.post('/api/saved-items/:item_id', (req, res) => {
     });
 });
 
+app.get('/api/saved-items/user', (req, res) => {
+  const userId = req.session.user.id;
+
+  // SQL query: get all saved item details for the user
+  const query = `
+    SELECT 
+      l.item_id,
+      l.seller_id,
+      l.item_name,
+      l.price,
+      l.image,
+      l.category,
+      l.seccategory,
+      l.description,
+      l.status,
+      l.dateAdded,
+      s.saved_at,
+      u.name AS seller_name
+    FROM saveditems s
+    JOIN listings l ON s.item_id = l.item_id
+    JOIN users u ON l.seller_id = u.id
+    WHERE s.user_id = ?
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching saved items:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    // results is an array of saved items with listing details
+    res.json(results);
+  });
+});
+
+
 // Unsave item
 app.delete('/api/saved-items/:item_id', (req, res) => {
     const userId = req.session.user.id;

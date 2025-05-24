@@ -371,7 +371,7 @@ function createProductElement(item) {
                         </div>
                         
                         <div class="flex justify-end space-x-3">
-                            <button class="contact-seller px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                            <button class="contact-seller bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
                                 Contact Seller
                             </button>
                         </div>
@@ -381,10 +381,14 @@ function createProductElement(item) {
             
             document.body.appendChild(modal);
             
-            modal.querySelectorAll('.close-modal').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    modal.remove();
-                });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+
+            modal.querySelector('.close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
             });
 
             modal.querySelectorAll('.contact-seller').forEach(btn => {
