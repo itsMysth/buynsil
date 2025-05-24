@@ -541,11 +541,19 @@
         }
 
         // Helper function to get current user ID (mock implementation)
-        function getCurrentUserId() {
-            // In a real app, this would come from your authentication system
-            // For demo purposes, we'll return a mock user ID
-            return 'user123';
-        }
+        async function getCurrentUserId() {
+            try {
+                const response = await fetch('/get-session-data');
+                if (!response.ok) throw new Error('Unauthorized');
+                
+                const userData = await response.json();
+                return userData.id; // Adjust based on your session object structure
+            } catch (error) {
+                console.error('Error fetching user ID:', error);
+                return null;
+            }
+            }
+
     </script>
 </body>
 </html>
