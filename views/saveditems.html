@@ -320,26 +320,8 @@
             
             // Add event listeners
             itemElement.querySelector('.save-btn').addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                try {
-                    const userId = getCurrentUserId();
-                    await fetch(`/api/saved-items/${userId}/${item.item_id}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    // Remove the item from the DOM
-                    itemElement.remove();
-                    
-                    // Check if container is now empty
-                    const savedContainer = document.getElementById('saved-container');
-                    if (savedContainer.children.length === 0) {
-                        document.getElementById('empty-state').classList.remove('hidden');
-                    }
-                } catch (error) {
-                    console.error('Error removing saved item:', error);
-                }
+                toggleSaveItem(item.item_id);
+                itemElement.remove();
             });
             
             itemElement.querySelector('.view-btn').addEventListener('click', function() {
@@ -474,6 +456,10 @@
             });
             
             document.body.appendChild(modal);
+        }
+
+        async function toggleSaveItem(itemId) {
+            await fetch(`/api/saved-items/${itemId}`, { method: 'DELETE' });
         }
 
         // Helper function to get current user ID (mock implementation)

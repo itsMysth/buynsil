@@ -314,7 +314,10 @@ app.get('/api/sortlistings', async (req, res) => {
             orderBy = 'price DESC';
             break;
         case 'name':
-            orderBy = 'name ASC';
+            orderBy = 'item_name ASC';
+            break;
+        case 'old':
+            orderBy = 'item_id ASC';
             break;
         case 'newest':
         default:
