@@ -80,6 +80,10 @@ app.get('/homepage', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'homepage.html'));
 });
 
+app.get('/saveditems', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'saveditems.html'));
+});
+
 app.get('/api/user/items', (req, res) => {
   const userId = req.query.userId; // Get the user ID from query string
 
