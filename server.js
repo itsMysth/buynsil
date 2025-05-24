@@ -259,6 +259,43 @@ db.query(query, [userId, userId, userId], (err, results) => {
 });
 });
 
+app.get('/api/search-users', (req, res) => {
+  const currentUserId = req.session.user.id;
+  const searchTerm = req.query.query || '';
+
+  if (!currentUserId) return res.status(401).json({ error: 'Not logged in' });
+
+  const query = `
+    SELECT
+      u.id AS user_id,
+      u.name,
+      m.content AS last_message,
+      m.timestamp AS last_timestamp,
+      m.sender_id,
+      m.receiver_id
+    FROM users u
+    LEFT JOIN messages m ON (
+      (m.sender_id = u.id OR m.receiver_id = u.id)
+      AND m.timestamp = (
+        SELECT MAX(m2.timestamp)
+        FROM messages m2
+        WHERE
+          ((m2.sender_id = u.id AND m2.receiver_id = ?) OR (m2.sender_id = ? AND m2.receiver_id = u.id))
+      )
+    )
+    WHERE u.name LIKE CONCAT('%', ?, '%')
+      AND u.id != ?
+    ORDER BY COALESCE(m.timestamp, '1970-01-01') DESC
+    LIMIT 50
+  `;
+
+  db.query(query, [currentUserId, currentUserId, searchTerm, currentUserId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+
 app.get('/api/listings', (req, res) => {
         const query = `
         SELECT 

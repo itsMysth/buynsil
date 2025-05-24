@@ -70,7 +70,7 @@
             <span class="text-2xl font-bold text-primary-600">BaynSil</span>
         </div>
             <!-- Search bar on right -->
-            <div class="w-full max-w-md">
+            <div id="sear" class="w-full max-w-md">
                 <div class="relative flex items-center">
                     <input
                         type="text"
@@ -183,18 +183,76 @@
     <script>
     
     document.addEventListener('DOMContentLoaded', async () => {
-        const pathParts = window.location.pathname.split('/');
-        const sellerId = pathParts[pathParts.length - 1]; // gets the seller ID from the path
-        const sellerName = new URLSearchParams(window.location.search).get('name');
+    const pathParts = window.location.pathname.split('/');
+    const sellerId = pathParts[pathParts.length - 1]; // gets the seller ID from the path
+    const sellerName = new URLSearchParams(window.location.search).get('name');
 
-        if (sellerId && sellerName) {
-            // If both are present, immediately load the conversation
-            await loadChat(sellerId, sellerName);
-        } else {
-            // Otherwise, show the messages list like normal
-            await fetchMessages();
+    if (sellerId && sellerName) {
+        // If both are present, immediately load the conversation
+        await loadChat(sellerId, sellerName);
+    } else {
+        // Otherwise, show the messages list like normal
+        await fetchMessages();
+    }
+
+    // Search input handling
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', debounce(async (e) => {
+        const query = e.target.value.trim();
+
+        if (query.length === 0) {
+        // If search is empty, reload full message list
+        await fetchMessages();
+        return;
         }
+
+        // Call your search API (replace /api/search-users with your endpoint)
+        const res = await fetch(`/api/search-users?query=${encodeURIComponent(query)}`, {
+        credentials: 'include'
         });
+
+        const users = await res.json();
+        const container = document.getElementById('messageList');
+        container.innerHTML = ''; // Clear current list
+
+        if (users.length === 0) {
+        container.innerHTML = `<p class="text-gray-500">No users found.</p>`;
+        return;
+        }
+
+        users.forEach(user => {
+        const button = document.createElement('button');
+        button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
+
+        button.innerHTML = `
+            <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+            <div class="flex-1">
+            <div class="font-medium text-gray-900">${user.name}</div>
+            <div class="text-sm text-gray-500 truncate">
+                ${user.last_message ? (user.sender_id === currentUserId ? 'You: ' : '') + user.last_message : ''}
+            </div>
+            </div>
+        `;
+
+        button.addEventListener('click', () => {
+            loadChat(user.user_id, user.name);
+        });
+
+        container.appendChild(button);
+        });
+
+    }, 300)); // debounce with 300ms delay
+    });
+
+    // Simple debounce helper to limit API calls while typing
+    function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+    }
+
 
     let currentUserId = null;
     async function fetchCurrentUserId() {
@@ -254,6 +312,10 @@
     async function loadChat(receiverId, name) {
         await fetchCurrentUserId();
         const header = document.getElementById('header');
+        const searchContainer = document.getElementById('sear');
+        if (searchContainer) {
+            searchContainer.style.display = 'none';
+        }
 
         header.innerHTML = `
         <div class="flex items-center p-4">
