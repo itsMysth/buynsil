@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const fs = require('fs');
 const session = require('express-session');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const app = express();
 
 app.use(express.urlencoded({ extended: true }));
@@ -430,63 +432,124 @@ app.get('/logout', (req, res) => {
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
     const sql = 'SELECT * FROM users WHERE email = ?';
-    db.query(sql, [email], async(err, results) => {
-        if(err){
+    db.query(sql, [email], async (err, results) => {
+        if (err) {
             console.error(err);
-            return res.send('Error while checking credentials');
+            return res.redirect('/login?error=server');
         }
 
-        if(results.length > 0){
-            const user = results[0];
-            const passwordMatch = await bcrypt.compare(password, user.password);
-            if(passwordMatch){
-              req.session.user = {
-                id: user.id,
-                name: user.name,
-                email: user.email
-              };
-                console.log('Session after login:', req.session.user);
-                return res.redirect('/homepage');
-            } else {
-                return res.redirect('/login?error=true');
-            }
-        }else {
-              return res.redirect('/login?error=true');
+        if (results.length === 0) {
+            return res.redirect('/login?error=invalid');
         }
-    })
-})
+
+        const user = results[0];
+
+        if (user.verified !== 1) {
+            return res.redirect('/login?error=unverified');
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            return res.redirect('/login?error=invalid');
+        }
+
+        req.session.user = {
+            id: user.id,
+            name: user.name,
+            email: user.email
+        };
+        console.log('Session after login:', req.session.user);
+        return res.redirect('/homepage');
+    });
+});
+
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'oniljauculan@gmail.com',
+    pass: 'zpjv kajp inmt skch'
+  }
+});
 
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
   const saltRounds = 10;
 
-  // Check if email already exists
+  // Check if email exists
   const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
   db.query(checkEmailSql, [email], async (err, results) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ success: false, message: 'Error checking email.' });
+      return res.status(500).json({ success: false, message: '❌ Error checking email.' });
     }
 
     if (results.length > 0) {
-      return res.status(409).json({ success: false, message: 'Email already exists.' });
+      // Email exists
+      return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
 
-    // Email is unique, hash password and insert
     try {
       const hashedPassword = await bcrypt.hash(password, saltRounds);
-      const insertSql = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-      db.query(insertSql, [name, email, hashedPassword], (err, result) => {
+
+      // Create token for email verification
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+
+      // Insert user with token and verified=false
+      const insertSql = `INSERT INTO users (name, email, password, verified, verification_token) VALUES (?, ?, ?, 0, ?)`;
+      db.query(insertSql, [name, email, hashedPassword, verificationToken], async (err, result) => {
         if (err) {
           console.error(err);
-          return res.status(500).json({ success: false, message: 'Failed to register.' });
+          return res.status(500).json({ success: false, message: '❌ Failed to register.' });
         }
-        return res.json({ success: true, message: 'Registration successful!' });
+
+        // Send verification email
+        const verifyUrl = `http://localhost:3000/verify?token=${verificationToken}`;  // Update domain for production
+
+        const mailOptions = {
+          from: '"Your App Name" <oniljauculan@gmail.com>',
+          to: email,
+          subject: 'Please verify your email',
+          html: `<p>Hi ${name},</p>
+                 <p>Thanks for registering! Please click the link below to verify your email address:</p>
+                 <a href="${verifyUrl}">${verifyUrl}</a>`
+        };
+
+        try {
+          await transporter.sendMail(mailOptions);
+          return res.json({ success: true, message: 'Registration successful! Please check your email to verify your account.' });
+        } catch (emailErr) {
+          console.error('Error sending verification email:', emailErr);
+          return res.status(500).json({ success: false, message: 'Failed to send verification email.' });
+        }
       });
+
     } catch (error) {
       console.error(error);
-      res.status(500).json({ success: false, message: 'Error hashing password.' });
+      res.status(500).json({ success: false, message: '❌ Error hashing password.' });
     }
+  });
+});
+
+app.get('/verify', (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send('Verification token is missing.');
+  }
+
+  const sql = `UPDATE users SET verified = 1, verification_token = NULL WHERE verification_token = ?`;
+  db.query(sql, [token], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Database error during verification.');
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).send('Invalid or expired verification token.');
+    }
+
+    res.send('Email verified successfully! You can now log in.');
   });
 });
 

@@ -200,7 +200,7 @@
         <div id="successModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded shadow-lg max-w-sm w-full text-center">
             <h2 class="text-xl font-semibold mb-4">Registration Successful</h2>
-            <p>You can now log in with your account.</p>
+            <p>Please verify your account to log in.</p>
             <button id="successCloseBtn" class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Close</button>
         </div>
         </div>
@@ -292,14 +292,27 @@
                 icon.classList.add('fa-eye');
             }
         }
-        window.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
+            const error = params.get('error');
             const loginErr = document.getElementById('loginErr');
 
-            if (params.get('error') === 'true') {
-            loginErr.textContent = 'Invalid email or password.';
-        }
-         });
+            if (error && loginErr) {
+            switch (error) {
+                case 'invalid':
+                loginErr.textContent = 'Incorrect email or password.';
+                break;
+                case 'unverified':
+                loginErr.textContent = 'Your account is not verified yet.';
+                break;
+                case 'server':
+                loginErr.textContent = 'A server error occurred. Please try again later.';
+                break;
+                default:
+                loginErr.textContent = '';
+            }
+            }
+        });
 
          function updatePasswordRequirements(inputId, prefix) {
             const password = document.getElementById(inputId).value;
