@@ -9,13 +9,14 @@ const session = require('express-session');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const app = express();
+require('dotenv').config();
 
 app.use(express.urlencoded({ extended: true }));
 const db = mysql.createConnection({
-    host: 'localhost',  // Replace with your host
-    user: 'root',       // Replace with your MySQL username
-    password: 'allen2004',       // Replace with your MySQL password
-    database: 'baynsil'  // Replace with your database name
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASS,
+    database: process.env.MYSQL_DB,
   });
  
   db.connect((err) => {
@@ -467,8 +468,8 @@ app.post('/login', (req, res) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'oniljauculan@gmail.com',
-    pass: 'zpjv kajp inmt skch'
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASS,
   }
 });
 
