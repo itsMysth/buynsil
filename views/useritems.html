@@ -68,6 +68,7 @@
             type="text"
             placeholder="Search your listings..."
             class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            id="searchInput"
           />
           <button class="absolute right-0 mr-2 p-1 text-primary-600 hover:text-primary-800">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,7 +205,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No listings yet</h3>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No listings found</h3>
           <p class="mt-1 text-sm text-gray-500">Get started by posting your first item.</p>
           <div class="mt-6">
             <a href="/addlisting" class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -232,73 +233,105 @@
   };
 
   // Load items when page loads
-  document.addEventListener('DOMContentLoaded', function() {
-    // Fetch current user from the database
-    fetch('/api/currentUser')
-      .then(response => response.json())
-      .then(data => {
-        if (data && data.user) {
-          currentUser = data.user;
-          
-          // Display user info
-          document.getElementById('user-info').classList.remove('hidden');
-          document.getElementById('user-name').textContent = currentUser.name || 'User';
-          
-          // Load user's items from API
-          loadUserItems();
-          
-          // Add event listener for search
-          const searchInput = document.querySelector('input[type="text"]');
-          if (searchInput) {
-            searchInput.addEventListener('input', function() {
-              filterItems(this.value);
-            });
-          }
-        } else {
-          // Redirect to login if no user is found
-          window.location.href = '/homepage';
+document.addEventListener('DOMContentLoaded', function () {
+  // Fetch current user from the database
+  fetch('/api/currentUser')
+    .then(response => response.json())
+    .then(data => {
+      if (data && data.user) {
+        currentUser = data.user;
+
+        // Display user info
+        document.getElementById('user-info').classList.remove('hidden');
+        document.getElementById('user-name').textContent = currentUser.name || 'User';
+
+        // Load user's items
+        loadUserItems();
+
+        // Add event listener for search
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.addEventListener('input', async function () {
+            const searchTerm = this.value.trim();
+
+            let url = `/api/user/items?userId=${currentUser.id}`;
+            if (searchTerm) {
+              url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+
+            const response = await fetch(url);
+            const items = await response.json();
+
+            const itemsContainer = document.getElementById('listings-container');
+            const emptyState = document.getElementById('empty-state');
+
+            itemsContainer.innerHTML = '';
+
+            if (items.length === 0) {
+              itemsContainer.classList.add('hidden');
+              emptyState.classList.remove('hidden');
+            } else {
+              emptyState.classList.add('hidden');
+              itemsContainer.classList.remove('hidden');
+              items.forEach(item => {
+                const itemElement = createItemElement(item);
+                itemsContainer.appendChild(itemElement);
+              });
+            }
+
+            document.getElementById('user-listings-count').textContent =
+              `You have ${items.length} ${items.length === 1 ? 'listing' : 'listings'}`;
+          });
         }
-      })
-      .catch(error => {
-        console.error('Error fetching current user:', error);
-        window.location.href = '/homepage'; // Redirect to login on error
-      });
-  });
+      } else {
+        window.location.href = '/homepage'; // Redirect if no user
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching current user:', error);
+      window.location.href = '/homepage';
+    });
+});
+
 
   // Load user's items from API
-  async function loadUserItems() {
-    if (!currentUser) return;
+async function loadUserItems() {
+  if (!currentUser) return;
 
-    const itemsContainer = document.getElementById('listings-container');
-    const emptyState = document.getElementById('empty-state');
-    
-    try {
-      const response = await fetch(`/api/user/items?userId=${currentUser.id}`);
-      const items = await response.json();
+  const itemsContainer = document.getElementById('listings-container');
+  const emptyState = document.getElementById('empty-state');
+  const searchTerm = document.getElementById('searchInput')?.value.trim() || '';
 
-      // Update listings count
-      document.getElementById('user-listings-count').textContent =
-        `You have ${items.length} ${items.length === 1 ? 'listing' : 'listings'}`;
+  try {
+    const params = new URLSearchParams({
+      userId: currentUser.id,
+      search: searchTerm
+    });
 
-      if (items.length === 0) {
-        itemsContainer.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        return;
-      }
+    const response = await fetch(`/api/user/items?${params.toString()}`);
+    const items = await response.json();
 
-      emptyState.classList.add('hidden');
-      itemsContainer.classList.remove('hidden');
-      itemsContainer.innerHTML = ''; // Clear existing items
+    document.getElementById('user-listings-count').textContent =
+      `You have ${items.length} ${items.length === 1 ? 'listing' : 'listings'}`;
 
-      // Add each item to the container
-      items.forEach(item => {
-        const itemElement = createItemElement(item);
-        itemsContainer.appendChild(itemElement);
-      });
-    } catch (error) {
-      console.error('Error loading user items:', error);
+    if (items.length === 0) {
+      itemsContainer.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      return;
     }
+
+    emptyState.classList.add('hidden');
+    itemsContainer.classList.remove('hidden');
+    itemsContainer.innerHTML = '';
+
+    items.forEach(item => {
+      const itemElement = createItemElement(item);
+      itemsContainer.appendChild(itemElement);
+    });
+  } catch (error) {
+    console.error('Error loading user items:', error);
   }
+}
 
   // Function to create an item element (same as before)
   function createItemElement(item) {

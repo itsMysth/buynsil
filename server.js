@@ -85,24 +85,31 @@ app.get('/saveditems', ensureAuthenticated, (req, res) => {
 });
 
 app.get('/api/user/items', (req, res) => {
-  const userId = req.query.userId; // Get the user ID from query string
+  const userId = req.query.userId;
+  const search = req.query.search?.trim();
 
   if (!userId) {
     return res.status(400).json({ error: 'User ID is required' });
   }
 
-  // Query the database for the user's items
-  const query = 'SELECT * FROM listings WHERE seller_id = ?'; // Adjust table/column names accordingly
-  db.execute(query, [userId], (err, results) => {
+  let query = 'SELECT * FROM listings WHERE seller_id = ?';
+  const params = [userId];
+
+  if (search) {
+    query += ' AND item_name LIKE ?';
+    params.push(`%${search}%`);
+  }
+
+  db.execute(query, params, (err, results) => {
     if (err) {
       console.error('Database query error:', err);
       return res.status(500).json({ error: 'Database query failed' });
     }
 
-    // Return the items to the client
     res.json(results);
   });
 });
+
 
 app.get('/api/currentUser', (req, res) => {
   if (req.session.user) {
@@ -295,84 +302,64 @@ app.get('/api/search-users', (req, res) => {
   });
 });
 
+app.get('/api/products', (req, res) => {
+    const { search, category, subcategory, sort } = req.query;
 
-app.get('/api/listings', (req, res) => {
-        const query = `
-        SELECT 
-            listings.item_id,
-            listings.item_name,
-            listings.category,
-            listings.seccategory,
-            listings.description,
-            listings.price,
-            listings.image,
-            listings.status,
-            listings.dateAdded,
-            listings.seller_id,
-            users.name AS seller_name
-        FROM listings
-        JOIN users ON listings.seller_id = users.id
+    let query = `
+        SELECT listings.*, users.name AS seller_name 
+        FROM listings 
+        JOIN users ON listings.seller_id = users.id 
+        WHERE listings.status != 'Sold'
     `;
+    const params = [];
 
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('Error fetching listings:', err);
-            return res.status(500).json({ error: 'Failed to fetch listings' });
-        }
-        
-        res.json(results); // Send results as JSON
-    });
-});
+    if (search) {
+        query += ` AND listings.item_name LIKE ?`;
+        params.push(`%${search}%`);
+    }
 
-app.get('/api/searchlistings', (req, res) => {
-    const name = req.query.name || '';
-    const sql = `SELECT * FROM listings WHERE LOWER(item_name) LIKE ? AND status != 'Sold'`;
-    const wildcard = `%${name.toLowerCase()}%`;
-
-    db.query(sql, [wildcard], (err, results) => {
-        if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database error' });
+    if (category && category !== 'All') {
+        if (category === 'General') {
+            query += ` AND (listings.category IS NULL OR listings.category = '')`;
         } else {
-            res.json(results);
+            query += ` AND listings.category = ?`;
+            params.push(category);
         }
-    });
-});
+    }
 
-app.get('/api/sortlistings', async (req, res) => {
-    const sort = req.query.sort || 'newest';
-    let orderBy = 'item_id DESC'; // default
+    if (subcategory && subcategory !== 'All' && subcategory !== 'Select Subcategory') {
+        query += ` AND listings.seccategory = ?`;
+        params.push(subcategory);
+    }
 
     switch (sort) {
         case 'price-low':
-            orderBy = 'price ASC';
+            query += ` ORDER BY listings.price ASC`;
             break;
         case 'price-high':
-            orderBy = 'price DESC';
+            query += ` ORDER BY listings.price DESC`;
             break;
         case 'name':
-            orderBy = 'item_name ASC';
-            break;
-        case 'old':
-            orderBy = 'item_id ASC';
+            query += ` ORDER BY listings.item_name ASC`;
             break;
         case 'newest':
-        default:
-            orderBy = 'item_id DESC';
+            query += ` ORDER BY listings.dateAdded DESC`;
             break;
+        case 'old':
+            query += ` ORDER BY listings.dateAdded ASC`;
+            break;
+        default:
+            query += ` ORDER BY listings.dateAdded DESC`;
     }
 
-    const sql = `SELECT * FROM listings WHERE status != 'Sold' ORDER BY ${orderBy}`;
-    
-    try {
-        const [rows] = await db.promise().query(sql);
-        res.json(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Database error' });
-    }
+    db.query(query, params, (err, results) => {
+        if (err) {
+            console.error('Query error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
 });
-
 
 app.delete('/api/user/items/:itemId', (req, res) => {
   const itemId = req.params.itemId;
