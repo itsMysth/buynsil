@@ -457,39 +457,39 @@ app.post('/login', (req, res) => {
 })
 
 app.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
-    const saltRounds = 10;
-  
-    // Check if email already exists
-    const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
-    db.query(checkEmailSql, [email], async (err, results) => {
-      if (err) {
-        console.error(err);
-        return res.send('❌ Error checking email.');
-      }
-  
-      if (results.length > 0) {
-        // Email exists, redirect back with query
-        return res.redirect(`/login?emailExists=true&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`);
-      }
-  
-      // Email is unique, hash password and insert
-      try {
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-        const insertSql = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-        db.query(insertSql, [name, email, hashedPassword], (err, result) => {
-          if (err) {
-            console.error(err);
-            return res.send('❌ Failed to register.');
-          }
-          res.redirect('/success');
-        });
-      } catch (error) {
-        console.error(error);
-        res.send('❌ Error hashing password.');
-      }
-    });
+  const { name, email, password } = req.body;
+  const saltRounds = 10;
+
+  // Check if email already exists
+  const checkEmailSql = 'SELECT * FROM users WHERE email = ?';
+  db.query(checkEmailSql, [email], async (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Error checking email.' });
+    }
+
+    if (results.length > 0) {
+      return res.status(409).json({ success: false, message: 'Email already exists.' });
+    }
+
+    // Email is unique, hash password and insert
+    try {
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      const insertSql = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+      db.query(insertSql, [name, email, hashedPassword], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ success: false, message: 'Failed to register.' });
+        }
+        return res.json({ success: true, message: 'Registration successful!' });
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error hashing password.' });
+    }
+  });
 });
+
 
 // Save item
 app.post('/api/saved-items/:item_id', (req, res) => {
