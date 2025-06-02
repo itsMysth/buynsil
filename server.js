@@ -9,6 +9,7 @@ const session = require('express-session');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const app = express();
+require('dotenv').config();
 
 app.use(express.urlencoded({ extended: true }));
 const db = mysql.createConnection({
@@ -467,8 +468,8 @@ app.post('/login', (req, res) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'oniljauculan@gmail.com',
-    pass: 'zpjv kajp inmt skch'
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASS,
   }
 });
 
