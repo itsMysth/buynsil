@@ -87,6 +87,10 @@ app.get('/saveditems', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'saveditems.html'));
 });
 
+app.get('/profile', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'profile.html'));
+});
+
 app.get('/api/user/items', (req, res) => {
   const userId = req.query.userId;
   const search = req.query.search?.trim();
