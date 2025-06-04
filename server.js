@@ -134,7 +134,6 @@ app.get('/get-session-data', (req, res) => {
   }
 });
 
-
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 const storage = multer.diskStorage({
