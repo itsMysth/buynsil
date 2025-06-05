@@ -401,7 +401,7 @@
     <div id="uploadSuccessModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
       <div class="bg-white p-6 rounded-xl shadow-xl text-center">
         <h2 class="text-xl font-semibold mb-4">Profile Picture Updated!</h2>
-        <button onclick="closeModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">OK</button>
+        <button onclick="hideModal('uploadSuccessModal')" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">OK</button>
       </div>
     </div>
 
@@ -410,7 +410,7 @@
     <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
       <h2 class="text-lg font-semibold mb-4">Password Mismatch</h2>
       <p class="mb-6">New password and confirmation do not match. Please try again.</p>
-      <button onclick="hideModalPM()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+      <button onclick="hideModal('passwordMismatchModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
         Close
       </button>
     </div>
@@ -421,7 +421,7 @@
     <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
       <h2 class="text-lg font-semibold mb-4">Invalid Password</h2>
       <p class="mb-6">New password cannot be the same as the current password.</p>
-      <button onclick="hideModalSM()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+      <button onclick="hideModal('samePasswordModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
         Close
       </button>
     </div>
@@ -431,7 +431,7 @@
     <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
       <h2 class="text-lg font-semibold mb-4">Success</h2>
       <p class="mb-6">Password updated successfully!</p>
-      <button onclick="hideModalUP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+      <button onclick="hideModal('passwordUpdatedModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
         Close
       </button>
     </div>
@@ -444,7 +444,7 @@
       <p class="mb-6">
         The current password you entered is incorrect. Please try again.
       </p>
-      <button onclick="hideModalIP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+      <button onclick="hideModal('incorrectPasswordModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
         Close
       </button>
     </div>
@@ -456,7 +456,7 @@
       <p class="mb-6">
         Password must be at least 8 characters long and include an uppercase letter, a number, and a special character.
       </p>
-      <button onclick="hideModalWP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+      <button onclick="hideModal('weakPasswordModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
         Close
       </button>
     </div>
@@ -505,19 +505,19 @@
       const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
       if (!isStrongPassword(newPassword)) {
-        showModalWP();
+        showModal('weakPasswordModal');
         return;
       }
 
       // Check if current and new password are the same
       if (currentPassword === newPassword) {
-        showModalSM();
+        showModal('samePasswordModal');
         return;
       }
 
       // Validate new password matching
       if (newPassword !== confirmPassword) {
-        showModalPM();
+        showModal('passwordMismatchModal');
         return;
       }
 
@@ -537,10 +537,10 @@
         const data = await response.json();
 
       if (response.ok) {
-        showModalUP();
+        showModal('passwordUpdatedModal');
         e.target.reset();
       } else if (data.message === 'Incorrect current password.') {
-        showModalIP();
+        showModal('incorrectPasswordModal');
       } else {
         alert(data.message || 'Failed to update password');
       }
@@ -551,49 +551,15 @@
       }
     });
 
-    function showModalUP() {
-      document.getElementById('passwordUpdatedModal').classList.remove('hidden');
-    }
-    function hideModalUP() {
-      document.getElementById('passwordUpdatedModal').classList.add('hidden');
+    // Generic functions
+    function showModal(id) {
+      document.getElementById(id).classList.remove('hidden');
     }
 
-    function showModalIP() {
-      document.getElementById('incorrectPasswordModal').classList.remove('hidden');
-    }
-    function hideModalIP() {
-      document.getElementById('incorrectPasswordModal').classList.add('hidden');
+    function hideModal(id) {
+      document.getElementById(id).classList.add('hidden');
     }
 
-    function showModalWP() {
-      document.getElementById('weakPasswordModal').classList.remove('hidden');
-    }
-    function hideModalWP() {
-      document.getElementById('weakPasswordModal').classList.add('hidden');
-    }
-
-    function showModalSM() {
-      document.getElementById('samePasswordModal').classList.remove('hidden');
-    }
-    function hideModalSM() {
-      document.getElementById('samePasswordModal').classList.add('hidden');
-    }
-
-    function showModalPM() {
-      document.getElementById('passwordMismatchModal').classList.remove('hidden');
-    }
-
-    function hideModalPM() {
-      document.getElementById('passwordMismatchModal').classList.add('hidden');
-    }
-
-    function showModal() {
-      document.getElementById('uploadSuccessModal').classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('uploadSuccessModal').classList.add('hidden');
-    }
 
     function toggleEditAddress() {
       document.getElementById("addressNonEdit").classList.add("hidden");
@@ -656,7 +622,7 @@
           method: 'POST',
           body: formData
         })
-        .then(res => res.ok ? showModal() : alert("Upload failed"))
+        .then(res => res.ok ? showModal('uploadSuccessModal') : alert("Upload failed"))
         .catch(err => console.error("Error uploading image:", err));
       }
     }
