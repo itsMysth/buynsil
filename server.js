@@ -580,6 +580,112 @@ app.post('/api/change-password', async (req, res) => {
   });
 });
 
+app.post('/api/update-address', (req, res) => {
+  const { address1, address2, city, state } = req.body;
+  const userId = req.session.user.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  // Check if userinfo exists for this user
+  const checkSql = 'SELECT * FROM userinfo WHERE userId = ?';
+  db.query(checkSql, [userId], (err, results) => {
+    if (err) {
+      console.error('Error checking userinfo:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    if (results.length > 0) {
+      // User info exists, perform UPDATE
+      const updateSql = `
+        UPDATE userinfo 
+        SET addressLine1 = ?, addressLine2 = ?, city = ?, province = ?
+        WHERE userId = ?`;
+      db.query(updateSql, [address1, address2, city, state, userId], (err) => {
+        if (err) {
+          console.error('Update error:', err);
+          return res.status(500).json({ message: 'Failed to update address' });
+        }
+        return res.json({ message: 'Address updated successfully' });
+      });
+    } else {
+      // No user info, perform INSERT
+      const insertSql = `
+        INSERT INTO userinfo (userId, addressLine1, addressLine2, city, province)
+        VALUES (?, ?, ?, ?, ?)`;
+      db.query(insertSql, [userId, addressLine1, addressLine2, city, province], (err) => {
+        if (err) {
+          console.error('Insert error:', err);
+          return res.status(500).json({ message: 'Failed to save address' });
+        }
+        return res.json({ message: 'Address saved successfully' });
+      });
+    }
+  });
+});
+
+app.post('/api/update-bio', (req, res) => {
+  const { bio } = req.body;
+  const userId = req.session.user.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const checkSql = 'SELECT * FROM userinfo WHERE userId = ?';
+  db.query(checkSql, [userId], (err, results) => {
+    if (err) {
+      console.error('Check bio error:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    if (results.length > 0) {
+      const updateSql = 'UPDATE userinfo SET bio = ? WHERE userId = ?';
+      db.query(updateSql, [bio, userId], (err) => {
+        if (err) {
+          console.error('Update bio error:', err);
+          return res.status(500).json({ message: 'Failed to update bio' });
+        }
+        return res.json({ message: 'Bio updated successfully' });
+      });
+    } else {
+      const insertSql = 'INSERT INTO userinfo (userId, bio) VALUES (?, ?)';
+      db.query(insertSql, [userId, bio], (err) => {
+        if (err) {
+          console.error('Insert bio error:', err);
+          return res.status(500).json({ message: 'Failed to save bio' });
+        }
+        return res.json({ message: 'Bio saved successfully' });
+      });
+    }
+  });
+});
+
+app.get('/api/get-userinfo', (req, res) => {
+  const userId = req.session.user.id;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  const sql = 'SELECT * FROM userinfo WHERE userId = ?';
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('DB error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+
+    if (results.length === 0) {
+      // No record found - you can return empty or default values
+      return res.json({ success: true, data: null });
+    }
+
+    // Send back the first (and presumably only) row for the user
+    return res.json({ success: true, data: results[0] });
+  });
+});
+
 app.get('/verify', (req, res) => {
   const { token } = req.query;
 
