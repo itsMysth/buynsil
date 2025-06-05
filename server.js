@@ -539,6 +539,47 @@ app.post('/register', async (req, res) => {
   });
 });
 
+app.post('/api/change-password', async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.session.user.id; // Adjust if using sessions or JWT
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  // Get the current hashed password from DB
+  const sql = 'SELECT password FROM users WHERE id = ?';
+  db.query(sql, [userId], async (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Server error.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const storedHash = results[0].password;
+    const isMatch = await bcrypt.compare(currentPassword, storedHash);
+
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect current password.' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    const updateSql = 'UPDATE users SET password = ? WHERE id = ?';
+    db.query(updateSql, [newHash, userId], (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Failed to update password.' });
+      }
+
+      return res.json({ success: true, message: 'Password updated successfully.' });
+    });
+  });
+});
+
 app.get('/verify', (req, res) => {
   const { token } = req.query;
 

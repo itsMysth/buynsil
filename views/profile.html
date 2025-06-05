@@ -215,56 +215,56 @@
           </div>
 
           <!-- Change Password Section -->
-          <div class="border-t border-b border-gray-200 pb-7 pt-3">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Change Password</h3>
-            <div class="space-y-4">
-              <div>
-                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                <div class="relative">
-                  <input type="password" id="currentPassword" name="currentPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter current password">
-                  <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('currentPassword', this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+          <form id="changePasswordForm">
+            <div class="border-t border-b border-gray-200 pb-7 pt-3">
+              <h3 class="text-lg font-bold text-gray-900 mb-4">Change Password</h3>
+              <div class="space-y-4">
+                <div>
+                  <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                  <div class="relative">
+                    <input type="password" id="currentPassword" name="currentPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter current password">
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('currentPassword', this)">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+            
+                <div>
+                  <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                  <div class="relative">
+                    <input type="password" id="newPassword" name="newPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter new password">
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('newPassword', this)">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+            
+                <div>
+                  <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                  <div class="relative">
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Confirm new password">
+                    <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('confirmPassword', this)">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    Update Password
                   </button>
                 </div>
               </div>
-              
-              <div>
-                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                <div class="relative">
-                  <input type="password" id="newPassword" name="newPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Enter new password">
-                  <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('newPassword', this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                <div class="relative">
-                  <input type="password" id="confirmPassword" name="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Confirm new password">
-                  <button type="button" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('confirmPassword', this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="flex justify-end">
-                <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                  Update Password
-                </button>
-              </div>
-
             </div>
-          </div>
+          </form>
 
             <!-- Address Section non-edit -->
             <div id="addressNonEdit" class="border-t border-b border-gray-200 pt-3 pb-7">
@@ -397,15 +397,79 @@
     </main>
   </div>
 
-  <!-- Success Modal -->
-  <div id="uploadSuccessModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
-    <div class="bg-white p-6 rounded-xl shadow-xl text-center">
-      <h2 class="text-xl font-semibold mb-4">Profile Picture Updated!</h2>
-      <button onclick="closeModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">OK</button>
+    <!-- Success Modal pfp -->
+    <div id="uploadSuccessModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+      <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+        <h2 class="text-xl font-semibold mb-4">Profile Picture Updated!</h2>
+        <button onclick="closeModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">OK</button>
+      </div>
+    </div>
+
+    <!-- Pass isnt the same with new and confirm -->
+    <div id="passwordMismatchModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4">Password Mismatch</h2>
+      <p class="mb-6">New password and confirmation do not match. Please try again.</p>
+      <button onclick="hideModalPM()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
     </div>
   </div>
 
+  <!-- Modal for current password same as new password -->
+  <div id="samePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4">Invalid Password</h2>
+      <p class="mb-6">New password cannot be the same as the current password.</p>
+      <button onclick="hideModalSM()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <div id="passwordUpdatedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4">Success</h2>
+      <p class="mb-6">Password updated successfully!</p>
+      <button onclick="hideModalUP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Incorrect Current Password Modal -->
+  <div id="incorrectPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4">Incorrect Password</h2>
+      <p class="mb-6">
+        The current password you entered is incorrect. Please try again.
+      </p>
+      <button onclick="hideModalIP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <div id="weakPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 class="text-lg font-semibold mb-4">Weak Password</h2>
+      <p class="mb-6">
+        Password must be at least 8 characters long and include an uppercase letter, a number, and a special character.
+      </p>
+      <button onclick="hideModalWP()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
+    </div>
+
   <script>
+
+    function isStrongPassword(password) {
+      const minLength = 8;
+      const hasUpper = /[A-Z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[^A-Za-z0-9]/.test(password);
+      return password.length >= minLength && hasUpper && hasNumber && hasSpecial;
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       loadUserProfile();
@@ -431,6 +495,96 @@
       } catch (err) {
         console.error('Error loading user profile:', err);
       }
+    }
+
+    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const currentPassword = document.getElementById('currentPassword').value.trim();
+      const newPassword = document.getElementById('newPassword').value.trim();
+      const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+      if (!isStrongPassword(newPassword)) {
+        showModalWP();
+        return;
+      }
+
+      // Check if current and new password are the same
+      if (currentPassword === newPassword) {
+        showModalSM();
+        return;
+      }
+
+      // Validate new password matching
+      if (newPassword !== confirmPassword) {
+        showModalPM();
+        return;
+      }
+
+      // Prepare payload
+      const payload = {
+        currentPassword,
+        newPassword,
+      };
+
+      try {
+        const response = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+      if (response.ok) {
+        showModalUP();
+        e.target.reset();
+      } else if (data.message === 'Incorrect current password.') {
+        showModalIP();
+      } else {
+        alert(data.message || 'Failed to update password');
+      }
+
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while updating the password.');
+      }
+    });
+
+    function showModalUP() {
+      document.getElementById('passwordUpdatedModal').classList.remove('hidden');
+    }
+    function hideModalUP() {
+      document.getElementById('passwordUpdatedModal').classList.add('hidden');
+    }
+
+    function showModalIP() {
+      document.getElementById('incorrectPasswordModal').classList.remove('hidden');
+    }
+    function hideModalIP() {
+      document.getElementById('incorrectPasswordModal').classList.add('hidden');
+    }
+
+    function showModalWP() {
+      document.getElementById('weakPasswordModal').classList.remove('hidden');
+    }
+    function hideModalWP() {
+      document.getElementById('weakPasswordModal').classList.add('hidden');
+    }
+
+    function showModalSM() {
+      document.getElementById('samePasswordModal').classList.remove('hidden');
+    }
+    function hideModalSM() {
+      document.getElementById('samePasswordModal').classList.add('hidden');
+    }
+
+    function showModalPM() {
+      document.getElementById('passwordMismatchModal').classList.remove('hidden');
+    }
+
+    function hideModalPM() {
+      document.getElementById('passwordMismatchModal').classList.add('hidden');
     }
 
     function showModal() {
@@ -529,23 +683,6 @@
       });
     });
 
-    // Form submission handler
-    document.getElementById('profileForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      // Here you would typically send the form data to the server
-      // For demonstration, we'll just show an alert
-      alert('Profile updated successfully!');
-      
-      // You could also add actual form submission logic here
-      // const formData = new FormData(this);
-      // fetch('/update-profile', {
-      //   method: 'POST',
-      //   body: formData
-      // }).then(response => {
-      //   // Handle response
-      // });
-    });
   </script>
 </body>
 </html>
