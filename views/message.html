@@ -221,7 +221,9 @@
         }
 
         users.forEach(user => {
-        const profilePic = user.profilepic || '/public/uploads/defaultprofile.webp';
+            const profilePic = user.profilepic 
+                ? `/uploads/${user.profilepic}` 
+                : '/uploads/defaultprofile.webp';
         const button = document.createElement('button');
         button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
@@ -289,7 +291,9 @@
         }
 
         users.forEach(user => {
-            const profilePic = user.profilepic || '/public/uploads/defaultprofile.webp';
+            const profilePic = user.profilepic 
+                ? `/uploads/${user.profilepic}` 
+                : '/uploads/defaultprofile.webp';
             const button = document.createElement('button');
             button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 

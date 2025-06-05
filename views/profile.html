@@ -397,6 +397,14 @@
     </main>
   </div>
 
+  <!-- Success Modal -->
+  <div id="uploadSuccessModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+    <div class="bg-white p-6 rounded-xl shadow-xl text-center">
+      <h2 class="text-xl font-semibold mb-4">Profile Picture Updated!</h2>
+      <button onclick="closeModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">OK</button>
+    </div>
+  </div>
+
   <script>
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -423,6 +431,14 @@
       } catch (err) {
         console.error('Error loading user profile:', err);
       }
+    }
+
+    function showModal() {
+      document.getElementById('uploadSuccessModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('uploadSuccessModal').classList.add('hidden');
     }
 
     function toggleEditAddress() {
@@ -486,7 +502,7 @@
           method: 'POST',
           body: formData
         })
-        .then(res => res.ok ? alert("Profile updated!") : alert("Upload failed"))
+        .then(res => res.ok ? showModal() : alert("Upload failed"))
         .catch(err => console.error("Error uploading image:", err));
       }
     }
