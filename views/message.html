@@ -221,11 +221,12 @@
         }
 
         users.forEach(user => {
+        const profilePic = user.profilepic || '/public/uploads/defaultprofile.webp';
         const button = document.createElement('button');
         button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
         button.innerHTML = `
-            <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+            <img src=${profilePic} alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
             <div class="flex-1">
             <div class="font-medium text-gray-900">${user.name}</div>
             <div class="text-sm text-gray-500 truncate">
@@ -288,11 +289,12 @@
         }
 
         users.forEach(user => {
+            const profilePic = user.profilepic || '/public/uploads/defaultprofile.webp';
             const button = document.createElement('button');
             button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
             button.innerHTML = `
-                <img src="https://i.pravatar.cc/40?u=${user.user_id}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
                 <div class="flex-1">
                 <div class="font-medium text-gray-900">${user.name}</div>
                 <div class="text-sm text-gray-500 truncate">

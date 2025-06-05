@@ -249,6 +249,7 @@ const query = `
   SELECT 
     u.id AS user_id,
     u.name,
+    u.profilepic,
     m.content AS last_message,
     m.timestamp AS last_timestamp,
     m.sender_id,
@@ -282,6 +283,7 @@ app.get('/api/search-users', (req, res) => {
     SELECT
       u.id AS user_id,
       u.name,
+      u.profilepic,
       m.content AS last_message,
       m.timestamp AS last_timestamp,
       m.sender_id,
