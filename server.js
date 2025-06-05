@@ -91,6 +91,8 @@ app.get('/profile', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'profile.html'));
 });
 
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 app.get('/api/user/items', (req, res) => {
   const userId = req.query.userId;
   const search = req.query.search?.trim();
@@ -739,6 +741,30 @@ app.get('/api/saved-items', (req, res) => {
             res.json(results.map(r => r.item_id));
         }
     );
+});
+
+app.get('/profile-pic', (req, res) => {
+  const userId = req.session.user.id;
+
+  db.query('SELECT profilepic FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) return res.status(500).send('Database error');
+    if (results.length === 0) return res.status(404).send('User not found');
+
+    const filename = results[0].profilepic || 'defaultprofile.webp';
+    const imagePath = path.join(__dirname, 'public/uploads', filename);
+
+    res.sendFile(imagePath);
+  });
+});
+
+app.post('/upload-profile-pic', upload.single('profilepic'), (req, res) => {
+  const userId = req.session.user.id;
+  const filename = req.file.filename;
+
+  db.query('UPDATE users SET profilepic = ? WHERE id = ?', [filename, userId], (err) => {
+    if (err) return res.status(500).send('Database update failed');
+    res.sendStatus(200);
+  });
 });
 
 // Start server

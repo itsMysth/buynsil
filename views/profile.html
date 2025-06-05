@@ -193,7 +193,7 @@
           <!-- Profile Picture Section -->
           <div class="flex flex-col items-center mb-10">
             <div class="profile-image-container mb-4">
-              <img id="profileImage" src="/public/uploads/arrow.png" alt="Profile" class="profile-image rounded-full border-4 border-primary-100">
+              <img id="profileImage" src="/profile-pic" alt="Profile" class="profile-image rounded-full border-4 border-primary-100">
               <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="previewProfileImage(this)">
             </div>
             <button type="button" onclick="document.getElementById('profileImageInput').click()" class="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
@@ -469,11 +469,25 @@
     // Function to preview profile image
     function previewProfileImage(input) {
       if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Preview the image
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('profileImage').src = e.target.result;
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
+
+        // Upload to server
+        const formData = new FormData();
+        formData.append('profilepic', file);
+
+        fetch('/upload-profile-pic', {
+          method: 'POST',
+          body: formData
+        })
+        .then(res => res.ok ? alert("Profile updated!") : alert("Upload failed"))
+        .catch(err => console.error("Error uploading image:", err));
       }
     }
 
