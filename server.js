@@ -52,7 +52,7 @@ if (!fs.existsSync(uploadPath)) {
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+  res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 app.get('/addlisting', (req, res) => {
@@ -371,6 +371,32 @@ app.get('/api/products', (req, res) => {
     });
 });
 
+app.get('/api/seller/:id', (req, res) => {
+  const userId = req.params.id;
+
+  const sql = `
+    SELECT users.name, userinfo.city, userinfo.province, userinfo.bio, users.profilepic
+    FROM users
+    LEFT JOIN userinfo ON users.id = userinfo.userId
+    WHERE users.id = ?`;
+  
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Database error' });
+    }
+    
+    // If no data found, just send null or empty object
+    if (results.length === 0) {
+      return res.json(null);
+    }
+
+    // Just send the first row object directly
+    res.json(results[0]);
+  });
+});
+
+
 app.delete('/api/user/items/:itemId', (req, res) => {
   const itemId = req.params.itemId;
 
@@ -581,7 +607,7 @@ app.post('/api/change-password', async (req, res) => {
 });
 
 app.post('/api/update-address', (req, res) => {
-  const { address1, address2, city, state } = req.body;
+  const { city, state } = req.body;
   const userId = req.session.user.id;
 
   if (!userId) {
@@ -600,9 +626,9 @@ app.post('/api/update-address', (req, res) => {
       // User info exists, perform UPDATE
       const updateSql = `
         UPDATE userinfo 
-        SET addressLine1 = ?, addressLine2 = ?, city = ?, province = ?
+        SET city = ?, province = ?
         WHERE userId = ?`;
-      db.query(updateSql, [address1, address2, city, state, userId], (err) => {
+      db.query(updateSql, [city, state, userId], (err) => {
         if (err) {
           console.error('Update error:', err);
           return res.status(500).json({ message: 'Failed to update address' });
@@ -612,9 +638,9 @@ app.post('/api/update-address', (req, res) => {
     } else {
       // No user info, perform INSERT
       const insertSql = `
-        INSERT INTO userinfo (userId, addressLine1, addressLine2, city, province)
-        VALUES (?, ?, ?, ?, ?)`;
-      db.query(insertSql, [userId, addressLine1, addressLine2, city, province], (err) => {
+        INSERT INTO userinfo (userId, city, province)
+        VALUES (?, ?, ?)`;
+      db.query(insertSql, [userId, city, state], (err) => {
         if (err) {
           console.error('Insert error:', err);
           return res.status(500).json({ message: 'Failed to save address' });
@@ -622,6 +648,31 @@ app.post('/api/update-address', (req, res) => {
         return res.json({ message: 'Address saved successfully' });
       });
     }
+  });
+});
+
+app.get('/api/seller/:id', (req, res) => {
+  const userId = req.params.id;
+
+  const sql = `
+    SELECT users.name, userinfo.city, userinfo.province, userinfo.bio, users.profilepic
+    FROM users
+    LEFT JOIN userinfo ON users.id = userinfo.userId
+    WHERE users.id = ?`;
+  
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Database error' });
+    }
+    
+    // If no data found, just send null or empty object
+    if (results.length === 0) {
+      return res.json(null);
+    }
+
+    // Just send the first row object directly
+    res.json(results[0]);
   });
 });
 

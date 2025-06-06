@@ -246,6 +246,22 @@
                 </div>
             </div>
         </main>
+
+        <div id="sellerInfoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full text-center">
+                <div class="flex justify-center items-center mb-3">
+                    <img id="sellerProfilePic" src="" alt="Profile Picture" class="w-24 h-24 rounded-full object-cover border mr-5">
+                    <h2 id="sellerName" class="text-lg font-semibold mb-2">Seller Name</h2>
+                </div>
+
+                <p id="sellerAddress" class="text-sm text-gray-600 mb-2">City and Province</p>
+                
+                <p id="sellerBio" class="text-sm text-gray-700 mb-6">Bio</p>
+                <button onclick="hideModal('sellerInfoModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+                Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -384,7 +400,7 @@
         // Show product details modal
         function showProductDetails(item) {
             const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 p-4';
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                     <div class="p-6">
@@ -416,7 +432,7 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Seller</p>
-                                <p class="text-sm">${item.seller_name || 'Unknown'}</p>
+                                <button onclick="showSellerInfo(9)" ><p class="text-sm text-blue-600 cursor-pointer hover:text-blue-700 hover:underline">${item.seller_name || 'Unknown'}</p></button>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-500">Date Posted</p>
@@ -527,6 +543,33 @@
                 });
             }
         }
+
+        async function showSellerInfo(userId) {
+            try {
+                const response = await fetch(`/api/seller/${userId}`);
+                if (!response.ok) throw new Error('Failed to fetch seller info');
+
+                const data = await response.json();
+                if (!data) return;
+
+                const profile = data.profilepic ? `/uploads/${data.profilepic}` : '/uploads/defaultprofile.webp';
+
+                // Fill in modal content
+                document.getElementById('sellerProfilePic').src = profile;
+                document.getElementById('sellerName').textContent = data.name || 'Unknown Seller';
+                document.getElementById('sellerAddress').textContent = `${data.city || ''}, ${data.province || ''}`;
+                document.getElementById('sellerBio').textContent = data.bio || 'No bio provided.';
+
+                // Show modal
+                document.getElementById('sellerInfoModal').classList.remove('hidden');
+            } catch (err) {
+                console.error('Error loading seller info:', err);
+            }
+        }
+
+            function hideModal(id) {
+                document.getElementById(id).classList.add('hidden');
+            }
 
     </script>
     
