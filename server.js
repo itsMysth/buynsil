@@ -546,7 +546,7 @@ app.post('/register', async (req, res) => {
         }
 
         // Send verification email
-        const verifyUrl = `http://localhost:3000/verify?token=${verificationToken}`;  // Update domain for production
+        const verifyUrl = `${process.env.BASE_URL}/verify?token=${verificationToken}`;
 
         const mailOptions = {
           from: '"Your App Name" <oniljauculan@gmail.com>',
