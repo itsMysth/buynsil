@@ -13,7 +13,7 @@ require('dotenv').config();
 
 app.use(express.urlencoded({ extended: true }));
 
-const pool = mysql.createPool({
+const db = mysql.createPool({
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASS,
@@ -22,9 +22,6 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
-
-module.exports = pool;
-
 
 function ensureAuthenticated(req, res, next) {
   if (req.session.user) {
