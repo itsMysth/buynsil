@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BaynSil Marketplace</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #7b9aff 0%, #f3f4f6 100%);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .nav-item {
+            transition: all 0.2s ease;
+        }
+        .nav-item:hover {
+            transform: translateX(4px);
+        }
+        .heart-icon {
+            transition: all 0.2s ease;
+        }
+        .heart-icon:hover {
+            transform: scale(1.2);
+        }
+        .heart-icon.saved {
+            fill: #ef4444;
+            stroke: #ef4444;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-10 bg-white shadow-sm">
+        <div class="container px-4 py-3 flex items-center justify-between">
+            <div class="ml-5 flex items-center space-x-4">
+                <img class="h-12 w-auto" src="/public/uploads/logo1.png" alt="">
+                <span class="text-2xl font-bold text-primary-600">BaynSil</span>
+            </div>
+            <!-- Search bar on right -->
+            <div class="w-full max-w-md">
+                <div class="relative flex items-center">
+                    <input
+                        type="text"
+                        placeholder="Search products..."
+                        class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        id="searchInput"
+                    />
+                    <button class="absolute right-0 mr-2 p-1 text-primary-600 hover:text-primary-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- User actions -->
+            <div class="flex items-center space-x-4">
+                <a href="/saveditems">
+                    <button class="p-2 text-gray-600 hover:text-primary-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                    </button>
+                </a>
+                <a href="/profile">
+                    <button  class="p-2 text-gray-600 hover:text-primary-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </button>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64">
+            <nav class="p-4">
+                <ul class="space-y-2 mt-6">
+                    <li>
+                        <a href="/homepage" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span class="font-medium">Shop</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/useritems" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <span class="font-medium">My Listings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/addlisting" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span class="font-medium">Post Item</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/messages" class="nav-item flex items-center px-4 py-3 text-primary-600 bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                            </svg>
+                            <span class="font-medium">Messages</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/saveditems" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                            </svg>
+                            <span class="font-medium">Saved</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/profile" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span class="font-medium">Profile</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="mt-8 pt-4 border-t border-gray-200">
+                    <a href="/logout" class="nav-item flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        <span class="font-medium">Log Out</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+        <!-- Main Content -->
+        <main class="w-full flex-1 flex flex-col ">
+                <!-- Header -->
+                <div id="header" class="border-b border-black flex-col justify-between items-start mb-2">
+                    <h1 class="p-4 text-3xl font-bold text-gray-900">Messages</h1>
+                </div>
+                <!-- Message List Container -->
+                <div id="messageList" class="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-white">
+                    <!-- messages go here -->
+                </div>
+        </main>
+    </div>
+
+    <script>
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+    const pathParts = window.location.pathname.split('/');
+    const sellerId = pathParts[pathParts.length - 1]; // gets the seller ID from the path
+    const sellerName = new URLSearchParams(window.location.search).get('name');
+
+    if (sellerId && sellerName) {
+        // If both are present, immediately load the conversation
+        await loadChat(sellerId, sellerName);
+    } else {
+        // Otherwise, show the messages list like normal
+        await fetchMessages();
+    }
+
+    // Search input handling
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', debounce(async (e) => {
+        const query = e.target.value.trim();
+
+        if (query.length === 0) {
+        // If search is empty, reload full message list
+        await fetchMessages();
+        return;
+        }
+
+        // Call your search API (replace /api/search-users with your endpoint)
+        const res = await fetch(`/api/search-users?query=${encodeURIComponent(query)}`, {
+        credentials: 'include'
+        });
+
+        const users = await res.json();
+        const container = document.getElementById('messageList');
+        container.innerHTML = ''; // Clear current list
+
+        if (users.length === 0) {
+        container.innerHTML = `<p class="text-gray-500">No users found.</p>`;
+        return;
+        }
+
+        users.forEach(user => {
+            const profilePic = user.profilepic 
+                ? `/uploads/${user.profilepic}` 
+                : '/uploads/defaultprofile.webp';
+        const button = document.createElement('button');
+        button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
+
+        button.innerHTML = `
+            <img src=${profilePic} alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+            <div class="flex-1">
+            <div class="font-medium text-gray-900">${user.name}</div>
+            <div class="text-sm text-gray-500 truncate">
+                ${user.last_message ? (user.sender_id === currentUserId ? 'You: ' : '') + user.last_message : ''}
+            </div>
+            </div>
+        `;
+
+        button.addEventListener('click', () => {
+            loadChat(user.user_id, user.name);
+        });
+
+        container.appendChild(button);
+        });
+
+    }, 300)); // debounce with 300ms delay
+    });
+
+    // Simple debounce helper to limit API calls while typing
+    function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+    }
+
+
+    let currentUserId = null;
+    async function fetchCurrentUserId() {
+    try {
+        const res = await fetch('/get-session-data', {
+        credentials: 'include'
+        });
+
+        if (!res.ok) throw new Error('Not logged in');
+
+        const user = await res.json();
+        currentUserId = user.id;
+        return user.id;
+    } catch (err) {
+        console.error('Failed to fetch session user:', err);
+        return null;
+    }
+    }
+
+    async function fetchMessages() {
+        await fetchCurrentUserId();
+        const res = await fetch('http://localhost:3000/api/messages', {
+        credentials: 'include'
+        });
+
+        const users = await res.json();
+        const container = document.getElementById('messageList');
+        container.innerHTML = ''; // Clear old messages
+
+        if (users.length === 0) {
+        container.innerHTML = `<p class="text-gray-500">No messages found.</p>`;
+        return;
+        }
+
+        users.forEach(user => {
+            const profilePic = user.profilepic 
+                ? `/uploads/${user.profilepic}` 
+                : '/uploads/defaultprofile.webp';
+            const button = document.createElement('button');
+            button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
+
+            button.innerHTML = `
+                <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                <div class="flex-1">
+                <div class="font-medium text-gray-900">${user.name}</div>
+                <div class="text-sm text-gray-500 truncate">
+                    ${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}
+                </div>
+                </div>
+            `;
+
+            button.addEventListener('click', () => {
+                loadChat(user.user_id, user.name); // or use history.pushState + loadChat if using History API
+            });
+
+            container.appendChild(button);
+    });
+    }
+
+    async function loadChat(receiverId, name) {
+        await fetchCurrentUserId();
+        const header = document.getElementById('header');
+        const searchContainer = document.getElementById('sear');
+        if (searchContainer) {
+            searchContainer.style.display = 'none';
+        }
+
+        header.innerHTML = `
+        <div class="flex items-center p-4">
+            <a href="/messages"><img src="/public/uploads/arrow.png" alt="Back" class="w-6 h-6" /></a>
+            <h1 class="ml-4 text-2xl font-bold text-gray-900">${name}</h1>
+        </div>
+        `;
+        try {
+            const response = await fetch(`/chat/messages?receiverId=${receiverId}`, {
+            method: 'GET',
+            credentials: 'include'
+            });
+
+            const messages = await response.json();
+            const messageList = document.getElementById('messageList');
+            const main = document.querySelector('main');
+            messageList.innerHTML = ''; // clear old messages
+
+            messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            const isCurrentUser = msg.sender_id === msg.current_user_id;
+
+            messageDiv.className = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
+            messageDiv.innerHTML = `
+                <div class="max-w-xs ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
+                ${msg.content}
+                </div>
+            `;
+            messageList.appendChild(messageDiv);
+            });
+            setTimeout(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            }, 0);
+
+            // Remove existing form if any
+            const existingForm = document.getElementById('chatForm');
+            if (existingForm) {
+            existingForm.remove();
+            }
+
+            // Create and append the form
+            const form = document.createElement('form');
+            form.id = 'chatForm';
+            form.className = 'flex items-center p-4 border-t bg-white';
+            form.innerHTML = `
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Type your message..."
+                class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+            />
+            <button
+                type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
+            >
+                Send
+            </button>
+            `;
+            main.appendChild(form);
+
+            // ✅ Form submit handler that uses outer receiverId
+            form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content) return;
+
+            await fetch('/chat/send', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ receiverId, content }) // ✅ uses passed receiverId
+            });
+
+            input.value = '';
+            loadChat(receiverId, name); // reload messages
+            });
+
+        } catch (err) {
+            console.error('Failed to load chat:', err);
+        }
+}
+
+    </script>
+
+</body>
