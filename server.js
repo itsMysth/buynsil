@@ -12,20 +12,19 @@ const app = express();
 require('dotenv').config();
 
 app.use(express.urlencoded({ extended: true }));
-const db = mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASS,
-    database: process.env.MYSQL_DB,
-  });
- 
-  db.connect((err) => {
-    if (err) {
-      console.error('Error connecting to the database:', err);
-    } else {
-      console.log('Connected to MySQL database :D');
-    }
-  });
+
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASS,
+  database: process.env.MYSQL_DB,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+module.exports = pool;
+
 
 function ensureAuthenticated(req, res, next) {
   if (req.session.user) {
