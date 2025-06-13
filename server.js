@@ -32,6 +32,10 @@ db.query('SELECT 1', (err, results) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('Server is alive!');
+});
+
 function ensureAuthenticated(req, res, next) {
   if (req.session.user) {
     return next();
