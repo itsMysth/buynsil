@@ -32,22 +32,6 @@ db.query('SELECT 1', (err, results) => {
   }
 });
 
-app.get('/', async (req, res) => {
-  try {
-    // Optional: test your DB connection/query
-    if (db) {
-      await db.query('SELECT 1');
-      return res.status(200).send('✅ Server is alive & DB is responsive');
-    }
-    throw new Error('Database not initialized');
-  } catch (err) {
-    console.error('Error in / route:', err);
-    return res
-      .status(500)
-      .send(`❌ Error: ${err.message || 'Unknown error'} — check logs`);
-  }
-});
-
 function ensureAuthenticated(req, res, next) {
   if (req.session.user) {
     return next();
@@ -71,6 +55,9 @@ if (!fs.existsSync(uploadPath)) {
 }
 
 app.use(express.static(__dirname));
+
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'login.html'));
