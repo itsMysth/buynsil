@@ -277,7 +277,7 @@
 
     async function fetchMessages() {
         await fetchCurrentUserId();
-        const res = await fetch('http://localhost:3000/api/messages', {
+        const res = await fetch('/api/messages', {
         credentials: 'include'
         });
 
