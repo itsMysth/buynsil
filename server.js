@@ -15,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const db = mysql.createPool({
   host: process.env.MYSQL_HOST,
+  port: process.env.MYSQL_PORT, // 👈 important
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASS,
   database: process.env.MYSQL_DB,
