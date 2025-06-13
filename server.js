@@ -971,7 +971,7 @@ app.post('/upload-profile-pic', upload.single('profilepic'), (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+const PORT = process.env.PORT;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
