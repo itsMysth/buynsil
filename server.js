@@ -219,22 +219,47 @@ app.post('/chat/send', async (req, res) => {
   res.status(200).json({ success: true });
 });
 
-app.get('/chat/messages', async (req, res) => {
-  const senderId = req.session.user.id
-  const receiverId = req.query.receiverId;
+app.get('/api/messages/unread', async (req, res) => {
+  const userId = req.session.user.id;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT COUNT(*) AS unread_count FROM messages WHERE receiver_id = ? AND is_read = FALSE`,
+      [userId]
+    );
+    res.json({ unread: rows[0].unread_count > 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to check unread messages' });
+  }
+});
+
+app.get('/chat/messages', async (req, res) => {
+  const senderId = req.session.user.id;
+  const receiverId = req.query.receiverId;
 
   if (!senderId) return res.status(401).json({ error: 'Unauthorized' });
   if (!receiverId) return res.status(400).json({ error: 'receiverId is required' });
 
   try {
+    // Mark unread messages as read
+    await db.promise().query(
+      `UPDATE messages 
+       SET is_read = TRUE 
+       WHERE sender_id = ? AND receiver_id = ? AND is_read = FALSE`,
+      [receiverId, senderId]
+    );
+
+    // Fetch conversation
     const [rows] = await db.promise().query(
       `SELECT *, ? AS current_user_id 
-      FROM messages 
-      WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-      ORDER BY timestamp ASC`,
+       FROM messages 
+       WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+       ORDER BY timestamp ASC`,
       [senderId, senderId, receiverId, receiverId, senderId]
     );
+
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -244,35 +269,40 @@ app.get('/chat/messages', async (req, res) => {
 
 app.get('/api/messages', (req, res) => {
   const userId = req.session.user.id;
-
   if (!userId) return res.status(401).json({ error: 'Not logged in' });
 
-const query = `
-  SELECT 
-    u.id AS user_id,
-    u.name,
-    u.profilepic,
-    m.content AS last_message,
-    m.timestamp AS last_timestamp,
-    m.sender_id,
-    m.receiver_id
-  FROM messages m
-  JOIN users u ON 
-    (u.id = IF(m.sender_id = ?, m.receiver_id, m.sender_id))
-  WHERE (m.sender_id = ? OR m.receiver_id = ?)
-    AND m.timestamp = (
-      SELECT MAX(m2.timestamp)
-      FROM messages m2
-      WHERE (m2.sender_id = m.sender_id AND m2.receiver_id = m.receiver_id)
-         OR (m2.sender_id = m.receiver_id AND m2.receiver_id = m.sender_id)
-    )
-  ORDER BY m.timestamp DESC
-`;
+  const query = `
+    SELECT 
+      u.id AS user_id,
+      u.name,
+      u.profilepic,
+      m.content AS last_message,
+      m.timestamp AS last_timestamp,
+      m.sender_id,
+      m.receiver_id,
+      (m.receiver_id = ? AND m.is_read = FALSE) AS is_unread
+    FROM messages m
+    JOIN users u ON 
+      u.id = IF(m.sender_id = ?, m.receiver_id, m.sender_id)
+    JOIN (
+      SELECT 
+        LEAST(sender_id, receiver_id) AS user_a,
+        GREATEST(sender_id, receiver_id) AS user_b,
+        MAX(timestamp) AS max_time
+      FROM messages
+      WHERE sender_id = ? OR receiver_id = ?
+      GROUP BY user_a, user_b
+    ) lm ON 
+      LEAST(m.sender_id, m.receiver_id) = lm.user_a AND 
+      GREATEST(m.sender_id, m.receiver_id) = lm.user_b AND 
+      m.timestamp = lm.max_time
+    ORDER BY m.timestamp DESC
+  `;
 
-db.query(query, [userId, userId, userId], (err, results) => {
-  if (err) return res.status(500).json({ error: err.message });
-  res.json(results);
-});
+  db.query(query, [userId, userId, userId, userId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
 
 app.get('/api/search-users', (req, res) => {
@@ -289,7 +319,11 @@ app.get('/api/search-users', (req, res) => {
       m.content AS last_message,
       m.timestamp AS last_timestamp,
       m.sender_id,
-      m.receiver_id
+      m.receiver_id,
+      CASE
+        WHEN m.is_read = FALSE AND m.receiver_id = ? THEN TRUE
+        ELSE FALSE
+      END AS is_unread
     FROM users u
     LEFT JOIN messages m ON (
       (m.sender_id = u.id OR m.receiver_id = u.id)
@@ -306,7 +340,7 @@ app.get('/api/search-users', (req, res) => {
     LIMIT 50
   `;
 
-  db.query(query, [currentUserId, currentUserId, searchTerm, currentUserId], (err, results) => {
+  db.query(query, [currentUserId, currentUserId, currentUserId, searchTerm, currentUserId], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
