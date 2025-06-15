@@ -224,27 +224,39 @@
             const profilePic = user.profilepic 
                 ? `/uploads/${user.profilepic}` 
                 : '/uploads/defaultprofile.webp';
-        const button = document.createElement('button');
-        button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
-        const messageTextClass = user.is_unread ? 'text-black font-semibold' : 'text-gray-400';
+            const button = document.createElement('button');
+            button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
-        button.innerHTML = `
-        <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
-        <div class="flex-1">
-            <div class="text-sm text-gray-900 font-medium">${user.name}</div>
-            <div class="text-sm ${messageTextClass} truncate">
-            ${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}
-            </div>
-        </div>
-        `;
+            const messageTextClass = user.is_unread ? 'text-black font-semibold' : 'text-gray-400';
 
-        button.addEventListener('click', () => {
-            loadChat(user.user_id, user.name);
+            // Detect if message contains an <img> tag
+            let lastMessagePreview;
+            if (user.last_message && user.last_message.includes('<img')) {
+                lastMessagePreview = user.sender_id === currentUserId
+                    ? 'You: Sent an image'
+                    : 'Sent an image';
+            } else {
+                lastMessagePreview = `${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}`;
+            }
+
+            button.innerHTML = `
+                <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                <div class="flex-1">
+                    <div class="text-sm text-gray-900 font-medium">${user.name}</div>
+                    <div class="text-sm ${messageTextClass} truncate">
+                        ${lastMessagePreview}
+                    </div>
+                </div>
+            `;
+
+            button.addEventListener('click', () => {
+                loadChat(user.user_id, user.name);
+            });
+
+            container.appendChild(button);
         });
 
-        container.appendChild(button);
-        });
 
     }, 300)); // debounce with 300ms delay
     });
@@ -296,27 +308,39 @@
             const profilePic = user.profilepic 
                 ? `/uploads/${user.profilepic}` 
                 : '/uploads/defaultprofile.webp';
+
             const button = document.createElement('button');
             button.className = 'w-full text-left flex items-center space-x-4 p-2 rounded cursor-pointer hover:bg-gray-100';
 
             const messageTextClass = user.is_unread ? 'text-black font-semibold' : 'text-gray-400';
 
+            // Detect if message contains an <img> tag
+            let lastMessagePreview;
+            if (user.last_message && user.last_message.includes('<img')) {
+                lastMessagePreview = user.sender_id === currentUserId
+                    ? 'You: Sent an image'
+                    : 'Sent an image';
+            } else {
+                lastMessagePreview = `${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}`;
+            }
+
             button.innerHTML = `
-            <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
-            <div class="flex-1">
-                <div class="text-sm text-gray-900 font-medium">${user.name}</div>
-                <div class="text-sm ${messageTextClass} truncate">
-                ${user.sender_id === currentUserId ? 'You: ' : ''}${user.last_message}
+                <img src="${profilePic}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                <div class="flex-1">
+                    <div class="text-sm text-gray-900 font-medium">${user.name}</div>
+                    <div class="text-sm ${messageTextClass} truncate">
+                        ${lastMessagePreview}
+                    </div>
                 </div>
-            </div>
             `;
 
             button.addEventListener('click', () => {
-                loadChat(user.user_id, user.name); // or use history.pushState + loadChat if using History API
+                loadChat(user.user_id, user.name);
             });
 
             container.appendChild(button);
-    });
+        });
+
     }
 
     async function loadChat(receiverId, name) {
@@ -345,17 +369,47 @@
             messageList.innerHTML = ''; // clear old messages
 
             messages.forEach(msg => {
-            const messageDiv = document.createElement('div');
-            const isCurrentUser = msg.sender_id === msg.current_user_id;
+                const messageDiv = document.createElement('div');
+                const isCurrentUser = msg.sender_id === msg.current_user_id;
+                const wrapperClass = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
+                messageDiv.className = wrapperClass;
 
-            messageDiv.className = `flex ${isCurrentUser ? 'justify-end pr-4' : 'justify-start pl-4'}`;
-            messageDiv.innerHTML = `
-                <div class="max-w-xs ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
-                ${msg.content}
-                </div>
-            `;
-            messageList.appendChild(messageDiv);
+                const isImage = msg.content.includes('<img');
+                const hasText = msg.content.replace(/<img[^>]*>/g, '').trim().length > 0;
+                const imageHTML = msg.content.match(/<img[^>]*>/g)?.join('') || '';
+                const textOnly = msg.content.replace(/<img[^>]*>/g, '').trim();
+
+                if (isImage && !hasText) {
+                    // Only image
+                    messageDiv.innerHTML = `
+                        <div class="max-w-xs">
+                            ${imageHTML.replace('<img', '<img style="max-width: 100%; max-height: 200px; border-radius: 8px;"')}
+                        </div>
+                    `;
+                } else if (isImage && hasText) {
+                    // Text and image
+                    messageDiv.innerHTML = `
+                        <div class="max-w-xs space-y-2">
+                            <div class="break-words ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
+                                ${textOnly}
+                            </div>
+                            <div>
+                                ${imageHTML.replace('<img', '<img style="max-width: 100%; max-height: 200px; border-radius: 8px;"')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Only text
+                    messageDiv.innerHTML = `
+                        <div class="max-w-xs break-words ${isCurrentUser ? 'bg-blue-500' : 'bg-gray-500'} text-white p-3 rounded-xl ${isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none'} shadow">
+                            ${msg.content}
+                        </div>
+                    `;
+                }
+
+                messageList.appendChild(messageDiv);
             });
+
             setTimeout(() => {
                 messageList.scrollTop = messageList.scrollHeight;
             }, 0);
@@ -369,42 +423,83 @@
             // Create and append the form
             const form = document.createElement('form');
             form.id = 'chatForm';
-            form.className = 'flex items-center p-4 border-t bg-white';
+            form.className = 'p-4 border-t bg-white';
             form.innerHTML = `
-            <input
-                type="text"
-                id="messageInput"
-                placeholder="Type your message..."
-                class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-            />
-            <button
-                type="submit"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
-            >
-                Send
-            </button>
+                <div id="imagePreview" class="mb-2 hidden">
+                    <img id="previewImg" src="" alt="Image preview" class="max-h-32 rounded-lg shadow">
+                </div>
+
+                <div class="flex items-center">
+                    <input
+                        type="text"
+                        id="messageInput"
+                        placeholder="Type your message..."
+                        class="flex-1 border border-gray-300 rounded-full px-4 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input type="file" id="imageInput" accept="image/*" class="hidden" />
+                    <label for="imageInput" class="cursor-pointer mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4-4a3 3 0 014 0l4 4m0 0H4m16 0V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10h16z" />
+                        </svg>
+                    </label>
+                    <button
+                        type="submit"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full transition"
+                    >
+                        Send
+                    </button>
+                </div>
             `;
+
+            const imageInput = form.querySelector('#imageInput');
+            const previewContainer = form.querySelector('#imagePreview');
+            const previewImg = form.querySelector('#previewImg');
+
+            imageInput.addEventListener('change', () => {
+                const file = imageInput.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        previewImg.src = reader.result;
+                        previewContainer.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.classList.add('hidden');
+                }
+            });
+
+
             main.appendChild(form);
 
             // ✅ Form submit handler that uses outer receiverId
             form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            if (!content) return;
+                e.preventDefault();
+                const input = document.getElementById('messageInput');
+                const imageFile = imageInput.files[0];
+                const content = input.value.trim();
 
-            await fetch('/chat/send', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ receiverId, content }) // ✅ uses passed receiverId
-            });
+                if (!content && !imageFile) return; // Prevent empty submit
 
-            input.value = '';
-            loadChat(receiverId, name); // reload messages
+                const formData = new FormData();
+                formData.append('receiverId', receiverId);
+                formData.append('content', content);
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+
+                await fetch('/chat/send', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                input.value = '';
+                imageInput.value = '';
+                previewImg.src = '';
+                previewContainer.classList.add('hidden');
+
+                loadChat(receiverId, name); // reload messages
             });
 
         } catch (err) {

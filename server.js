@@ -202,22 +202,26 @@ app.post('/items/:id', (req, res) => {
   });
 });
 
-app.post('/chat/send', async (req, res) => {
-  const senderId = req.session.user.id
+app.post('/chat/send', upload.single('image'), async (req, res) => {
+  const senderId = req.session.user.id;
   const { receiverId, content } = req.body;
+  const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-  if (!senderId || !receiverId || !content) {
+  if (!senderId || !receiverId || (!content && !image)) {
     return res.status(400).json({ error: 'Missing data' });
   }
 
-  // Save to DB
+  const fullContent = content || '';
+  const combined = image ? `${fullContent}\n<img src="${image}" class="max-w-xs rounded mt-2" />` : fullContent;
+
   await db.query(
     'INSERT INTO messages (sender_id, receiver_id, content, timestamp) VALUES (?, ?, ?, NOW())',
-    [senderId, receiverId, content]
+    [senderId, receiverId, combined]
   );
 
   res.status(200).json({ success: true });
 });
+
 
 app.get('/api/messages/unread', async (req, res) => {
   const userId = req.session.user.id;
