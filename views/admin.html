@@ -76,7 +76,7 @@
     }
   </style>
 </head>
-<body class="text-gray-800">
+<body class="text-gray-800 overflow-hidden">
   <!-- Top Navigation Bar -->
   <header class="sticky top-0 z-10 bg-white shadow-sm">
     <div class="container px-4 py-3 flex items-center justify-between">
@@ -209,15 +209,6 @@
             <div class="space-y-4">
               <div id="recentUsers">
                 <!-- Users will be loaded here -->
-                <div class="animate-pulse flex space-x-4">
-                  <div class="flex-1 space-y-4 py-1">
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="space-y-2">
-                      <div class="h-4 bg-gray-200 rounded"></div>
-                      <div class="h-4 bg-gray-200 rounded w-5/6"></div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -232,15 +223,6 @@
             <div class="space-y-4">
               <div id="recentListings">
                 <!-- Listings will be loaded here -->
-                <div class="animate-pulse flex space-x-4">
-                  <div class="flex-1 space-y-4 py-1">
-                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div class="space-y-2">
-                      <div class="h-4 bg-gray-200 rounded"></div>
-                      <div class="h-4 bg-gray-200 rounded w-5/6"></div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -248,136 +230,6 @@
       </div>
     </main>
   </div>
-
-  <!-- Ban User Modal -->
-  <div id="banUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Ban User</h3>
-        <button onclick="hideModal('banUserModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="mb-4">
-        <p>Are you sure you want to ban <span id="banUserName" class="font-semibold">User Name</span>?</p>
-        <p class="text-sm text-gray-500 mt-1">Banned users will not be able to log in or interact with the platform.</p>
-      </div>
-      
-      <div class="mb-4">
-        <label for="banReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Ban</label>
-        <textarea id="banReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter reason for banning this user..."></textarea>
-      </div>
-      
-      <div class="flex justify-end space-x-3">
-        <button onclick="hideModal('banUserModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Cancel
-        </button>
-        <button onclick="confirmBanUser()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
-          Confirm Ban
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete Listing Modal -->
-  <div id="deleteListingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Delete Listing</h3>
-        <button onclick="hideModal('deleteListingModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="mb-4">
-        <p>Are you sure you want to delete the listing "<span id="deleteListingName" class="font-semibold">Listing Name</span>"?</p>
-        <p class="text-sm text-gray-500 mt-1">This action cannot be undone.</p>
-      </div>
-      
-      <div class="mb-4">
-        <label for="deleteReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Deletion</label>
-        <textarea id="deleteReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter reason for deleting this listing..."></textarea>
-      </div>
-      
-      <div class="flex justify-end space-x-3">
-        <button onclick="hideModal('deleteListingModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Cancel
-        </button>
-        <button onclick="confirmDeleteListing()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
-          Confirm Delete
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Report Detail Modal -->
-  <div id="reportDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Report Details</h3>
-        <button onclick="hideModal('reportDetailModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="space-y-4">
-        <div>
-          <h4 class="font-medium text-gray-900">Reported User</h4>
-          <div id="reportedUser" class="flex items-center mt-1">
-            <img id="reportedUserImg" src="" alt="" class="w-8 h-8 rounded-full mr-2">
-            <span id="reportedUserName" class="font-medium"></span>
-          </div>
-        </div>
-        
-        <div>
-          <h4 class="font-medium text-gray-900">Reported By</h4>
-          <div id="reporterUser" class="flex items-center mt-1">
-            <img id="reporterUserImg" src="" alt="" class="w-8 h-8 rounded-full mr-2">
-            <span id="reporterUserName" class="font-medium"></span>
-          </div>
-        </div>
-        
-        <div>
-          <h4 class="font-medium text-gray-900">Reason</h4>
-          <p id="reportReason" class="mt-1 text-gray-700"></p>
-        </div>
-        
-        <div>
-          <h4 class="font-medium text-gray-900">Details</h4>
-          <p id="reportDetails" class="mt-1 text-gray-700"></p>
-        </div>
-        
-        <div>
-          <h4 class="font-medium text-gray-900">Status</h4>
-          <div id="reportStatus" class="mt-1">
-            <span class="badge badge-warning">Pending</span>
-          </div>
-        </div>
-        
-        <div>
-          <h4 class="font-medium text-gray-900">Reported On</h4>
-          <p id="reportDate" class="mt-1 text-gray-700"></p>
-        </div>
-      </div>
-      
-      <div class="mt-6 flex justify-end space-x-3">
-        <button onclick="resolveReport(false)" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Dismiss
-        </button>
-        <button onclick="resolveReport(true)" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
-          Take Action
-        </button>
-      </div>
-    </div>
-  </div>
-
 
   <script>
     // Global variables to store selected IDs
@@ -414,19 +266,22 @@
       try {
         const response = await fetch('/api/admin/users/recent');
         const users = await response.json();
-        
+
         const container = document.getElementById('recentUsers');
         container.innerHTML = '';
-        
-        if (users.length === 0) {
+
+        if (!users || users.length === 0) {
           container.innerHTML = '<p class="text-gray-500">No recent users</p>';
           return;
         }
-        
-        users.forEach(user => {
+
+        // Limit to the 3 most recent users
+        const limitedUsers = users.slice(0, 3);
+
+        limitedUsers.forEach(user => {
           const userElement = document.createElement('div');
           userElement.className = 'flex items-center justify-between py-2 border-b border-gray-100';
-          
+
           userElement.innerHTML = `
             <div class="flex items-center">
               <img src="${user.profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-3">
@@ -435,19 +290,16 @@
                 <p class="text-xs text-gray-500">Joined ${new Date(user.joinDate).toLocaleDateString()}</p>
               </div>
             </div>
-            <div class="flex space-x-2">
-              <button onclick="viewUserProfile('${user.id}')" class="text-sm text-primary-600 hover:text-primary-800">View</button>
-              <button onclick="showBanUserModal('${user.id}', '${user.name}')" class="text-sm text-red-600 hover:text-red-800">Ban</button>
-            </div>
           `;
-          
+
           container.appendChild(userElement);
         });
       } catch (error) {
         console.error('Error loading recent users:', error);
-        document.getElementById('recentUsers').innerHTML = '<p class="text-red-500">Error loading users</p>';
+        // container.innerHTML = '<p class="text-red-500">Error loading users</p>';
       }
     }
+
 
     // Load recent listings
     async function loadRecentListings() {
@@ -481,10 +333,6 @@
                 <p class="text-xs text-gray-500">$${listing.price} • ${listing.category}</p>
               </div>
             </div>
-            <div class="flex space-x-2">
-              <button onclick="viewListing('${listing.id}')" class="text-sm text-primary-600 hover:text-primary-800">View</button>
-              <button onclick="showDeleteListingModal('${listing.id}', '${listing.name}')" class="text-sm text-red-600 hover:text-red-800">Delete</button>
-            </div>
           `;
           
           container.appendChild(listingElement);
@@ -493,167 +341,6 @@
         console.error('Error loading recent listings:', error);
         document.getElementById('recentListings').innerHTML = '<p class="text-red-500">Error loading listings</p>';
       }
-    }
-
-    // Show ban user modal
-    function showBanUserModal(userId, userName) {
-      selectedUserId = userId;
-      document.getElementById('banUserName').textContent = userName;
-      document.getElementById('banReason').value = '';
-      showModal('banUserModal');
-    }
-
-    // Confirm ban user
-    async function confirmBanUser() {
-        const reason = document.getElementById('banReason').value.trim();
-      
-      if (!reason) {
-        showNotification('Please provide a reason for banning this user', false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/admin/users/ban', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: selectedUserId,
-            reason: reason
-          })
-        });
-        
-        if (response.ok) {
-          showNotification('User has been banned successfully');
-          hideModal('banUserModal');
-          loadDashboardStats();
-          loadRecentActivity();
-          loadRecentUsers();
-        } else {
-          throw new Error('Failed to ban user');
-        }
-      } catch (error) {
-        console.error('Error banning user:', error);
-        showNotification('Failed to ban user', false);
-      }
-    }
-
-    // Show delete listing modal
-    function showDeleteListingModal(listingId, listingName) {
-      selectedListingId = listingId;
-      document.getElementById('deleteListingName').textContent = listingName;
-      document.getElementById('deleteReason').value = '';
-      showModal('deleteListingModal');
-    }
-
-    // Confirm delete listing
-    async function confirmDeleteListing() {
-      const reason = document.getElementById('deleteReason').value.trim();
-      
-      if (!reason) {
-        showNotification('Please provide a reason for deleting this listing', false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/admin/listings/delete', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            listingId: selectedListingId,
-            reason: reason
-          })
-        });
-        
-        if (response.ok) {
-          showNotification('Listing has been deleted successfully');
-          hideModal('deleteListingModal');
-          loadDashboardStats();
-          loadRecentActivity();
-          loadRecentListings();
-        } else {
-          throw new Error('Failed to delete listing');
-        }
-      } catch (error) {
-        console.error('Error deleting listing:', error);
-        showNotification('Failed to delete listing', false);
-      }
-    }
-
-    // View report details
-    async function viewReportDetails(reportId) {
-      try {
-        const response = await fetch(`/api/admin/reports/${reportId}`);
-        const report = await response.json();
-        
-        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic || '/uploads/defaultprofile.webp';
-        document.getElementById('reportedUserName').textContent = report.reportedUser.name;
-        document.getElementById('reporterUserImg').src = report.reporter.profilePic || '/uploads/defaultprofile.webp';
-        document.getElementById('reporterUserName').textContent = report.reporter.name;
-        document.getElementById('reportReason').textContent = report.reason;
-        document.getElementById('reportDetails').textContent = report.details || 'No additional details provided';
-        document.getElementById('reportDate').textContent = new Date(report.date).toLocaleString();
-        
-        // Update status badge
-        const statusBadge = document.getElementById('reportStatus');
-        statusBadge.innerHTML = '';
-        const badge = document.createElement('span');
-        badge.className = report.resolved ? 'badge badge-success' : 'badge badge-warning';
-        badge.textContent = report.resolved ? 'Resolved' : 'Pending';
-        statusBadge.appendChild(badge);
-        
-        selectedReportId = reportId;
-        showModal('reportDetailModal');
-      } catch (error) {
-        console.error('Error loading report details:', error);
-        showNotification('Failed to load report details', false);
-      }
-    }
-
-    // Resolve report
-    async function resolveReport(takeAction) {
-      try {
-        const response = await fetch(`/api/admin/reports/${selectedReportId}/resolve`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            takeAction: takeAction
-          })
-        });
-        
-        if (response.ok) {
-          showNotification(`Report has been ${takeAction ? 'resolved with action' : 'dismissed'}`);
-          hideModal('reportDetailModal');
-          loadDashboardStats();
-          loadRecentActivity();
-          
-          // If we took action, refresh users/listings as one might have been banned/deleted
-          if (takeAction) {
-            loadRecentUsers();
-            loadRecentListings();
-          }
-        } else {
-          throw new Error('Failed to resolve report');
-        }
-      } catch (error) {
-        console.error('Error resolving report:', error);
-        showNotification('Failed to resolve report', false);
-      }
-    }
-
-    // View user profile
-    function viewUserProfile(userId) {
-      window.open(`/admin/users/${userId}`, '_blank');
-    }
-
-    // View listing
-    function viewListing(listingId) {
-      window.open(`/listings/${listingId}`, '_blank');
     }
 
     // Show modal

@@ -1019,6 +1019,96 @@ app.post('/upload-profile-pic', upload.single('profilepic'), (req, res) => {
   });
 });
 
+app.get('/api/admin/stats', (req, res) => {
+  const stats = {};
+
+  // Query 1: Total Verified Users
+  db.query('SELECT COUNT(*) AS totalUsers FROM users WHERE verified = 1', (err, result) => {
+    if (err) {
+      console.error('Error fetching total users:', err);
+      return res.status(500).json({ error: 'Error fetching total users' });
+    }
+    stats.totalUsers = result[0].totalUsers;
+
+    // Query 2: Total Listings
+    db.query('SELECT COUNT(*) AS totalListings FROM listings', (err, result) => {
+      if (err) {
+        console.error('Error fetching total listings:', err);
+        return res.status(500).json({ error: 'Error fetching total listings' });
+      }
+      stats.totalListings = result[0].totalListings;
+
+      // Query 3: Active Listings
+      db.query("SELECT COUNT(*) AS activeListings FROM listings WHERE status = 'Active'", (err, result) => {
+        if (err) {
+          console.error('Error fetching active listings:', err);
+          return res.status(500).json({ error: 'Error fetching active listings' });
+        }
+        stats.activeListings = result[0].activeListings;
+
+        // Query 4: Pending Reports
+        db.query("SELECT COUNT(*) AS pendingReports FROM reports WHERE status = 'Pending'", (err, result) => {
+          if (err) {
+            console.error('Error fetching pending reports:', err);
+            return res.status(500).json({ error: 'Error fetching pending reports' });
+          }
+          stats.pendingReports = result[0].pendingReports;
+
+          // Query 5: Resolved Today
+          db.query("SELECT COUNT(*) AS resolvedToday FROM reports WHERE status = 'Resolved' AND date = CURDATE()", (err, result) => {
+            if (err) {
+              console.error('Error fetching resolved reports:', err);
+              return res.status(500).json({ error: 'Error fetching resolved reports' });
+            }
+            stats.resolvedToday = result[0].resolvedToday;
+
+            // Final response
+            res.json(stats);
+          });
+        });
+      });
+    });
+  });
+});
+
+app.get('/api/admin/users/recent', (req, res) => {
+  const sql = `
+    SELECT id, name, profilepic, joinDate 
+    FROM users 
+    WHERE verified = 1 
+    ORDER BY joinDate DESC 
+    LIMIT 3
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching recent users:', err);
+      return res.status(500).json({ error: 'Failed to load recent users' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.get('/api/admin/listings/recent', (req, res) => {
+  const sql = `
+    SELECT item_id AS id, item_name AS name, price, image, category 
+    FROM listings 
+    ORDER BY dateAdded DESC 
+    LIMIT 3
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching recent listings:', err);
+      return res.status(500).json({ error: 'Failed to load listings' });
+    }
+
+    res.json(results);
+  });
+});
+
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
