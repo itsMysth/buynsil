@@ -52,7 +52,23 @@ if (!fs.existsSync(uploadPath)) {
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'login.html'));
+  res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+});
+
+app.get('/admin/reports', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'Admin_reports.html'));
+});
+
+app.get('/admin/listings', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'Admin_listings.html'));
+});
+
+app.get('/admin/users', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'Admin_users.html'));
 });
 
 app.get('/addlisting', (req, res) => {

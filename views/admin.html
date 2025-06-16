@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | BaynSil</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          },
+          fontFamily: {
+            'markazi': ['Markazi Text', 'serif'],
+            'inter': ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Markazi+Text:wght@400..700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    .sidebar {
+      background: linear-gradient(180deg, #7b9aff 0%, #f3f4f6 100%);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .nav-item {
+      transition: all 0.2s ease;
+    }
+    .nav-item:hover {
+      transform: translateX(4px);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-primary {
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+    .badge-success {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    .badge-warning {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .badge-danger {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-10 bg-white shadow-sm">
+    <div class="container px-4 py-3 flex items-center justify-between">
+      <div class="ml-5 flex items-center space-x-4">
+        <img class="h-12 w-auto" src="/public/uploads/logo1.png" alt="">
+        <span class="text-2xl font-bold text-primary-600">BaynSil Admin</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="sidebar w-64 min-h-screen">
+      <nav class="p-4">
+        <ul class="space-y-2 mt-6">
+          <li>
+            <a href="/admin" class="nav-item flex items-center px-4 py-3 text-primary-600 bg-primary-50 rounded-lg">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+              <span class="font-medium">Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/users" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span class="font-medium">Users</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/listings" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span class="font-medium">Listings</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/reports" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="font-medium">Reports</span>
+            </a>
+          </li>
+        </ul>
+        
+        <div class="mt-8 pt-4 border-t border-gray-200">
+          <a href="/logout" class="nav-item flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg">
+            <svg class="w-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            <span class="font-medium">Log Out</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 bg-gray-50">
+      <div class="container mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p class="text-gray-600 mt-2">Manage the BaynSil Marketplace platform</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <!-- Total Users Card -->
+          <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-primary-600">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Total Users</p>
+                <h3 id="totalUsers" class="text-2xl font-bold text-gray-900 mt-1">Loading...</h3>
+                <p class="opacity-0 text-sm text-gray-500 mt-2"><span id="activeUsers" class="text-green-600">0</span> active</p>
+              </div>
+              <div class="bg-primary-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Listings Card -->
+          <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-600">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Total Listings</p>
+                <h3 id="totalListings" class="text-2xl font-bold text-gray-900 mt-1">Loading...</h3>
+                <p class="text-sm text-gray-500 mt-2"><span id="activeListings" class="text-green-600">0</span> active</p>
+              </div>
+              <div class="bg-blue-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reports Card -->
+          <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-600">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Users Reported</p>
+                <h3 id="pendingReports" class="text-2xl font-bold text-gray-900 mt-1">Loading...</h3>
+                <p class="text-sm text-gray-500 mt-2"><span id="resolvedReports" class="text-green-600">0</span> resolved</p>
+              </div>
+              <div class="bg-red-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Recent Users -->
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-gray-900">Recent Users</h2>
+              <button class="text-sm text-primary-600 hover:text-primary-800">View All</button>
+            </div>
+            
+            <div class="space-y-4">
+              <div id="recentUsers">
+                <!-- Users will be loaded here -->
+                <div class="animate-pulse flex space-x-4">
+                  <div class="flex-1 space-y-4 py-1">
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div class="space-y-2">
+                      <div class="h-4 bg-gray-200 rounded"></div>
+                      <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Listings -->
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-gray-900">Recent Listings</h2>
+              <button class="text-sm text-primary-600 hover:text-primary-800">View All</button>
+            </div>
+            
+            <div class="space-y-4">
+              <div id="recentListings">
+                <!-- Listings will be loaded here -->
+                <div class="animate-pulse flex space-x-4">
+                  <div class="flex-1 space-y-4 py-1">
+                    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div class="space-y-2">
+                      <div class="h-4 bg-gray-200 rounded"></div>
+                      <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Ban User Modal -->
+  <div id="banUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Ban User</h3>
+        <button onclick="hideModal('banUserModal')" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="mb-4">
+        <p>Are you sure you want to ban <span id="banUserName" class="font-semibold">User Name</span>?</p>
+        <p class="text-sm text-gray-500 mt-1">Banned users will not be able to log in or interact with the platform.</p>
+      </div>
+      
+      <div class="mb-4">
+        <label for="banReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Ban</label>
+        <textarea id="banReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter reason for banning this user..."></textarea>
+      </div>
+      
+      <div class="flex justify-end space-x-3">
+        <button onclick="hideModal('banUserModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+          Cancel
+        </button>
+        <button onclick="confirmBanUser()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
+          Confirm Ban
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Listing Modal -->
+  <div id="deleteListingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Delete Listing</h3>
+        <button onclick="hideModal('deleteListingModal')" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="mb-4">
+        <p>Are you sure you want to delete the listing "<span id="deleteListingName" class="font-semibold">Listing Name</span>"?</p>
+        <p class="text-sm text-gray-500 mt-1">This action cannot be undone.</p>
+      </div>
+      
+      <div class="mb-4">
+        <label for="deleteReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Deletion</label>
+        <textarea id="deleteReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter reason for deleting this listing..."></textarea>
+      </div>
+      
+      <div class="flex justify-end space-x-3">
+        <button onclick="hideModal('deleteListingModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+          Cancel
+        </button>
+        <button onclick="confirmDeleteListing()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
+          Confirm Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Detail Modal -->
+  <div id="reportDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Report Details</h3>
+        <button onclick="hideModal('reportDetailModal')" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <h4 class="font-medium text-gray-900">Reported User</h4>
+          <div id="reportedUser" class="flex items-center mt-1">
+            <img id="reportedUserImg" src="" alt="" class="w-8 h-8 rounded-full mr-2">
+            <span id="reportedUserName" class="font-medium"></span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900">Reported By</h4>
+          <div id="reporterUser" class="flex items-center mt-1">
+            <img id="reporterUserImg" src="" alt="" class="w-8 h-8 rounded-full mr-2">
+            <span id="reporterUserName" class="font-medium"></span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900">Reason</h4>
+          <p id="reportReason" class="mt-1 text-gray-700"></p>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900">Details</h4>
+          <p id="reportDetails" class="mt-1 text-gray-700"></p>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900">Status</h4>
+          <div id="reportStatus" class="mt-1">
+            <span class="badge badge-warning">Pending</span>
+          </div>
+        </div>
+        
+        <div>
+          <h4 class="font-medium text-gray-900">Reported On</h4>
+          <p id="reportDate" class="mt-1 text-gray-700"></p>
+        </div>
+      </div>
+      
+      <div class="mt-6 flex justify-end space-x-3">
+        <button onclick="resolveReport(false)" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+          Dismiss
+        </button>
+        <button onclick="resolveReport(true)" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
+          Take Action
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // Global variables to store selected IDs
+    let selectedUserId = null;
+    let selectedListingId = null;
+    let selectedReportId = null;
+
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDashboardStats();
+      loadRecentUsers();
+      loadRecentListings();
+    });
+
+    // Load dashboard statistics
+    async function loadDashboardStats() {
+      try {
+        const response = await fetch('/api/admin/stats');
+        const data = await response.json();
+        
+        document.getElementById('totalUsers').textContent = data.totalUsers;
+        document.getElementById('totalListings').textContent = data.totalListings;
+        document.getElementById('activeListings').textContent = data.activeListings;
+        document.getElementById('pendingReports').textContent = data.pendingReports;
+        document.getElementById('resolvedReports').textContent = data.resolvedToday;
+
+      } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+      }
+    }
+
+    // Load recent users
+    async function loadRecentUsers() {
+      try {
+        const response = await fetch('/api/admin/users/recent');
+        const users = await response.json();
+        
+        const container = document.getElementById('recentUsers');
+        container.innerHTML = '';
+        
+        if (users.length === 0) {
+          container.innerHTML = '<p class="text-gray-500">No recent users</p>';
+          return;
+        }
+        
+        users.forEach(user => {
+          const userElement = document.createElement('div');
+          userElement.className = 'flex items-center justify-between py-2 border-b border-gray-100';
+          
+          userElement.innerHTML = `
+            <div class="flex items-center">
+              <img src="${user.profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-3">
+              <div>
+                <p class="text-sm font-medium text-gray-900">${user.name}</p>
+                <p class="text-xs text-gray-500">Joined ${new Date(user.joinDate).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="viewUserProfile('${user.id}')" class="text-sm text-primary-600 hover:text-primary-800">View</button>
+              <button onclick="showBanUserModal('${user.id}', '${user.name}')" class="text-sm text-red-600 hover:text-red-800">Ban</button>
+            </div>
+          `;
+          
+          container.appendChild(userElement);
+        });
+      } catch (error) {
+        console.error('Error loading recent users:', error);
+        document.getElementById('recentUsers').innerHTML = '<p class="text-red-500">Error loading users</p>';
+      }
+    }
+
+    // Load recent listings
+    async function loadRecentListings() {
+      try {
+        const response = await fetch('/api/admin/listings/recent');
+        const listings = await response.json();
+        
+        const container = document.getElementById('recentListings');
+        container.innerHTML = '';
+        
+        if (listings.length === 0) {
+          container.innerHTML = '<p class="text-gray-500">No recent listings</p>';
+          return;
+        }
+        
+        listings.forEach(listing => {
+          const listingElement = document.createElement('div');
+          listingElement.className = 'flex items-center justify-between py-2 border-b border-gray-100';
+          
+          listingElement.innerHTML = `
+            <div class="flex items-center">
+              <div class="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center mr-3 overflow-hidden">
+                ${listing.image ? 
+                  `<img src="${listing.image}" alt="${listing.name}" class="h-full w-full object-contain">` : 
+                  `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>`}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">${listing.name}</p>
+                <p class="text-xs text-gray-500">$${listing.price} • ${listing.category}</p>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="viewListing('${listing.id}')" class="text-sm text-primary-600 hover:text-primary-800">View</button>
+              <button onclick="showDeleteListingModal('${listing.id}', '${listing.name}')" class="text-sm text-red-600 hover:text-red-800">Delete</button>
+            </div>
+          `;
+          
+          container.appendChild(listingElement);
+        });
+      } catch (error) {
+        console.error('Error loading recent listings:', error);
+        document.getElementById('recentListings').innerHTML = '<p class="text-red-500">Error loading listings</p>';
+      }
+    }
+
+    // Show ban user modal
+    function showBanUserModal(userId, userName) {
+      selectedUserId = userId;
+      document.getElementById('banUserName').textContent = userName;
+      document.getElementById('banReason').value = '';
+      showModal('banUserModal');
+    }
+
+    // Confirm ban user
+    async function confirmBanUser() {
+        const reason = document.getElementById('banReason').value.trim();
+      
+      if (!reason) {
+        showNotification('Please provide a reason for banning this user', false);
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/users/ban', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: selectedUserId,
+            reason: reason
+          })
+        });
+        
+        if (response.ok) {
+          showNotification('User has been banned successfully');
+          hideModal('banUserModal');
+          loadDashboardStats();
+          loadRecentActivity();
+          loadRecentUsers();
+        } else {
+          throw new Error('Failed to ban user');
+        }
+      } catch (error) {
+        console.error('Error banning user:', error);
+        showNotification('Failed to ban user', false);
+      }
+    }
+
+    // Show delete listing modal
+    function showDeleteListingModal(listingId, listingName) {
+      selectedListingId = listingId;
+      document.getElementById('deleteListingName').textContent = listingName;
+      document.getElementById('deleteReason').value = '';
+      showModal('deleteListingModal');
+    }
+
+    // Confirm delete listing
+    async function confirmDeleteListing() {
+      const reason = document.getElementById('deleteReason').value.trim();
+      
+      if (!reason) {
+        showNotification('Please provide a reason for deleting this listing', false);
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/listings/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            listingId: selectedListingId,
+            reason: reason
+          })
+        });
+        
+        if (response.ok) {
+          showNotification('Listing has been deleted successfully');
+          hideModal('deleteListingModal');
+          loadDashboardStats();
+          loadRecentActivity();
+          loadRecentListings();
+        } else {
+          throw new Error('Failed to delete listing');
+        }
+      } catch (error) {
+        console.error('Error deleting listing:', error);
+        showNotification('Failed to delete listing', false);
+      }
+    }
+
+    // View report details
+    async function viewReportDetails(reportId) {
+      try {
+        const response = await fetch(`/api/admin/reports/${reportId}`);
+        const report = await response.json();
+        
+        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic || '/uploads/defaultprofile.webp';
+        document.getElementById('reportedUserName').textContent = report.reportedUser.name;
+        document.getElementById('reporterUserImg').src = report.reporter.profilePic || '/uploads/defaultprofile.webp';
+        document.getElementById('reporterUserName').textContent = report.reporter.name;
+        document.getElementById('reportReason').textContent = report.reason;
+        document.getElementById('reportDetails').textContent = report.details || 'No additional details provided';
+        document.getElementById('reportDate').textContent = new Date(report.date).toLocaleString();
+        
+        // Update status badge
+        const statusBadge = document.getElementById('reportStatus');
+        statusBadge.innerHTML = '';
+        const badge = document.createElement('span');
+        badge.className = report.resolved ? 'badge badge-success' : 'badge badge-warning';
+        badge.textContent = report.resolved ? 'Resolved' : 'Pending';
+        statusBadge.appendChild(badge);
+        
+        selectedReportId = reportId;
+        showModal('reportDetailModal');
+      } catch (error) {
+        console.error('Error loading report details:', error);
+        showNotification('Failed to load report details', false);
+      }
+    }
+
+    // Resolve report
+    async function resolveReport(takeAction) {
+      try {
+        const response = await fetch(`/api/admin/reports/${selectedReportId}/resolve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            takeAction: takeAction
+          })
+        });
+        
+        if (response.ok) {
+          showNotification(`Report has been ${takeAction ? 'resolved with action' : 'dismissed'}`);
+          hideModal('reportDetailModal');
+          loadDashboardStats();
+          loadRecentActivity();
+          
+          // If we took action, refresh users/listings as one might have been banned/deleted
+          if (takeAction) {
+            loadRecentUsers();
+            loadRecentListings();
+          }
+        } else {
+          throw new Error('Failed to resolve report');
+        }
+      } catch (error) {
+        console.error('Error resolving report:', error);
+        showNotification('Failed to resolve report', false);
+      }
+    }
+
+    // View user profile
+    function viewUserProfile(userId) {
+      window.open(`/admin/users/${userId}`, '_blank');
+    }
+
+    // View listing
+    function viewListing(listingId) {
+      window.open(`/listings/${listingId}`, '_blank');
+    }
+
+    // Show modal
+    function showModal(modalId) {
+      document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    // Hide modal
+    function hideModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // Show notification
+    function showNotification(message, isSuccess = true) {
+      const notification = document.getElementById('successNotification');
+      const messageElement = document.getElementById('successMessage');
+      
+      messageElement.textContent = message;
+      
+      if (isSuccess) {
+        notification.classList.remove('bg-red-500');
+        notification.classList.add('bg-green-500');
+      } else {
+        notification.classList.remove('bg-green-500');
+        notification.classList.add('bg-red-500');
+      }
+      
+      notification.classList.remove('translate-x-full');
+      notification.classList.add('translate-x-0');
+      
+      setTimeout(() => {
+        notification.classList.remove('translate-x-0');
+        notification.classList.add('translate-x-full');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
