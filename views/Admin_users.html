@@ -171,10 +171,11 @@
                 <input id="user-search" type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm" placeholder="Search users...">
               </div>
             </div>
-            <div class="flex space-x-3">
+            <div class="flex ml-3 space-x-3">
               <select id="status-filter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
+                <option value="unverified">Unverified</option>
                 <option value="banned">Banned</option>
               </select>
               <select id="sort-by" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
@@ -431,19 +432,21 @@
       loadUsers();
       
       // Setup event listeners
-      document.getElementById('user-search').addEventListener('input', debounce(loadUsers, 300));
-      document.getElementById('status-filter').addEventListener('change', loadUsers);
-      document.getElementById('sort-by').addEventListener('change', loadUsers);
+      document.getElementById('user-search').addEventListener('input', () => loadUsers(true));
+      document.getElementById('status-filter').addEventListener('change', () => loadUsers(true));
+      document.getElementById('sort-by').addEventListener('change', () => loadUsers(true));
+
     });
 
     // Load users with filters
-    async function loadUsers() {
+    async function loadUsers(resetPage = false) {
+      if (resetPage) currentPage = 1; // 👈 Reset to first page if needed
+
       const searchQuery = document.getElementById('user-search').value;
       const statusFilter = document.getElementById('status-filter').value;
       const sortBy = document.getElementById('sort-by').value;
-      
+
       try {
-        // Show loading state
         const tableBody = document.getElementById('users-table-body');
         tableBody.innerHTML = `
           <tr>
@@ -452,22 +455,18 @@
             </td>
           </tr>
         `;
-        
-        // Build query parameters
+
         const params = new URLSearchParams();
         params.append('page', currentPage);
         params.append('perPage', usersPerPage);
         if (searchQuery) params.append('search', searchQuery);
         if (statusFilter !== 'all') params.append('status', statusFilter);
         params.append('sort', sortBy);
-        
+
         const response = await fetch(`/api/admin/users?${params.toString()}`);
         const data = await response.json();
-        
-        // Update table
+
         updateUsersTable(data.users);
-        
-        // Update pagination
         updatePagination(data.total, data.perPage, data.currentPage);
       } catch (error) {
         console.error('Error loading users:', error);
@@ -484,7 +483,7 @@
     // Update users table with data
     function updateUsersTable(users) {
       const tableBody = document.getElementById('users-table-body');
-      
+
       if (users.length === 0) {
         tableBody.innerHTML = `
           <tr>
@@ -495,32 +494,41 @@
         `;
         return;
       }
-      
+
       tableBody.innerHTML = '';
-      
+
       users.forEach(user => {
+        const profilePic = user.profilePic
+          ? `/uploads/${user.profilePic}` 
+          : '/uploads/defaultprofile.webp';
         const row = document.createElement('tr');
-        
-        // Format join date
+
         const joinDate = new Date(user.createdAt).toLocaleDateString();
-        
-        // Status badge
+
+        // Set status badge based on user.status value
         let statusBadge = '';
-        if (user.isBanned) {
-          statusBadge = '<span class="badge badge-danger">Banned</span>';
-        } else {
-          statusBadge = '<span class="badge badge-success">Active</span>';
+        switch (user.status) {
+          case 'Admin':
+            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Admin</span>';
+            break;
+          case 'Banned':
+            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Banned</span>';
+            break;
+          case 'Active':
+            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>';
+            break;
+          default:
+            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">Unverified</span>';
         }
-        
+
         row.innerHTML = `
           <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex items-center">
               <div class="flex-shrink-0 h-10 w-10">
-                <img class="h-10 w-10 rounded-full" src="${user.profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}">
+                <img class="h-10 w-10 rounded-full" src="${profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}">
               </div>
               <div class="ml-4">
                 <div class="text-sm font-medium text-gray-900">${user.name}</div>
-                <div class="text-sm text-gray-500">@${user.username}</div>
               </div>
             </div>
           </td>
@@ -536,14 +544,13 @@
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
             ${user.listingCount || 0}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button onclick="viewUserDetails('${user._id}')" class="text-primary-600 hover:text-primary-900 mr-3">View</button>
-            ${user.isBanned ? 
+          <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+            ${user.status === 'Banned' ? 
               `<button onclick="showUnbanUserModal('${user._id}', '${user.name}')" class="text-green-600 hover:text-green-900">Unban</button>` : 
               `<button onclick="showBanUserModal('${user._id}', '${user.name}')" class="text-red-600 hover:text-red-900">Ban</button>`}
           </td>
         `;
-        
+
         tableBody.appendChild(row);
       });
     }
@@ -551,74 +558,81 @@
     // Update pagination controls
     function updatePagination(totalItems, itemsPerPage, currentPage) {
       const totalPages = Math.ceil(totalItems / itemsPerPage);
-      
-      // Update pagination info
+
+      // Update pagination info text
       const startItem = (currentPage - 1) * itemsPerPage + 1;
       const endItem = Math.min(currentPage * itemsPerPage, totalItems);
       document.getElementById('pagination-info').innerHTML = `
         Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> results
       `;
-      
-      // TODO: Update pagination buttons with proper event handlers
-    }
 
-    // View user details
-    async function viewUserDetails(userId) {
-      try {
-        const response = await fetch(`/api/admin/users/${userId}`);
-        const user = await response.json();
-        
-        // Update modal content
-        document.getElementById('detailUserImg').src = user.profilePic || '/uploads/defaultprofile.webp';
-        document.getElementById('detailUserName').textContent = user.name;
-        document.getElementById('detailUserEmail').textContent = user.email;
-        document.getElementById('detailUserJoinDate').textContent = `Joined ${new Date(user.createdAt).toLocaleDateString()}`;
-        document.getElementById('detailUserLocation').textContent = user.location || 'Not specified';
-        
-        // Update status badge
-        const statusBadge = document.getElementById('detailUserStatus');
-        statusBadge.innerHTML = '';
-        const badge = document.createElement('span');
-        badge.className = user.isBanned ? 'badge badge-danger' : 'badge badge-success';
-        badge.textContent = user.isBanned ? 'Banned' : 'Active';
-        statusBadge.appendChild(badge);
-        
-        // Update stats
-        document.getElementById('detailUserListings').textContent = user.stats?.totalListings || 0;
-        document.getElementById('detailUserActiveListings').textContent = user.stats?.activeListings || 0;
-        document.getElementById('detailUserReviews').textContent = user.stats?.totalReviews || 0;
-        document.getElementById('detailUserRating').textContent = user.stats?.averageRating?.toFixed(1) || '0.0';
-        
-        // Update activity
-        const activityList = document.getElementById('userActivityList');
-        if (user.recentActivity && user.recentActivity.length > 0) {
-          activityList.innerHTML = '';
-          user.recentActivity.forEach(activity => {
-            const activityItem = document.createElement('div');
-                        activityItem.className = 'text-sm';
-            activityItem.innerHTML = `
-              <div class="flex items-start">
-                <div class="flex-shrink-0 mt-0.5">
-                  <span class="w-2 h-2 rounded-full ${activity.type === 'listing' ? 'bg-blue-500' : activity.type === 'review' ? 'bg-purple-500' : 'bg-gray-500'}"></span>
-                </div>
-                <div class="ml-3">
-                  <p class="text-gray-900">${activity.message}</p>
-                  <p class="text-gray-500 text-xs mt-0.5">${new Date(activity.timestamp).toLocaleString()}</p>
-                </div>
-              </div>
-            `;
-            activityList.appendChild(activityItem);
-          });
-        } else {
-          activityList.innerHTML = '<div class="text-gray-500 text-sm">No recent activity found.</div>';
-        }
-        
-        // Show modal
-        showModal('userDetailModal');
-      } catch (error) {
-        console.error('Error loading user details:', error);
-        showNotification('Error loading user details', false);
+      // Update pagination buttons
+      const paginationContainer = document.querySelector('[aria-label="Pagination"]');
+      paginationContainer.innerHTML = '';
+
+      // Previous Button
+      const prevButton = document.createElement('a');
+      prevButton.href = '#';
+      prevButton.className = 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
+      prevButton.innerHTML = `
+        <span class="sr-only">Previous</span>
+        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      `;
+      prevButton.onclick = (e) => {
+        e.preventDefault();
+        prevPage();
+      };
+      if (currentPage === 1) {
+        prevButton.classList.add('opacity-50', 'pointer-events-none');
       }
+      paginationContainer.appendChild(prevButton);
+
+      // Page Numbers
+      const maxButtons = 5;
+      let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+      let end = Math.min(start + maxButtons - 1, totalPages);
+      if (end - start < maxButtons - 1) {
+        start = Math.max(1, end - maxButtons + 1);
+      }
+
+      for (let i = start; i <= end; i++) {
+        const pageButton = document.createElement('a');
+        pageButton.href = '#';
+        pageButton.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+          i === currentPage
+            ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
+            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+        }`;
+        pageButton.textContent = i;
+        if (i !== currentPage) {
+          pageButton.onclick = (e) => {
+            e.preventDefault();
+            goToPage(i);
+          };
+        }
+        paginationContainer.appendChild(pageButton);
+      }
+
+      // Next Button
+      const nextButton = document.createElement('a');
+      nextButton.href = '#';
+      nextButton.className = 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
+      nextButton.innerHTML = `
+        <span class="sr-only">Next</span>
+        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+      `;
+      nextButton.onclick = (e) => {
+        e.preventDefault();
+        nextPage();
+      };
+      if (currentPage === totalPages) {
+        nextButton.classList.add('opacity-50', 'pointer-events-none');
+      }
+      paginationContainer.appendChild(nextButton);
     }
 
     // Show ban user modal

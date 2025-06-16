@@ -213,6 +213,19 @@
             <button id="errorCloseBtn" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Close</button>
         </div>
         </div>
+
+        <div id="bannedUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4 text-red-600">Account Banned</h2>
+                <p id="banReasonText" class="mb-6 text-gray-700">
+                Your account has been banned. Reason: [reason will be inserted here].
+                </p>
+                <button onclick="hideModal('bannedUserModal')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md focus:outline-none">
+                Close
+                </button>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -313,6 +326,25 @@
             }
             }
         });
+
+        // Example: check URL params and show modal
+            window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('error') === 'banned') {
+                const reason = params.get('reason') || 'No reason provided.';
+                document.getElementById('banReasonText').innerText = `Your account has been banned. Reason: ${reason}`;
+                showModal('bannedUserModal');
+            }
+        });
+
+        function showModal(id) {
+          document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideModal(id) {
+          document.getElementById(id).classList.add('hidden');
+        }
+
 
          function updatePasswordRequirements(inputId, prefix) {
             const password = document.getElementById(inputId).value;

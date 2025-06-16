@@ -52,7 +52,7 @@ if (!fs.existsSync(uploadPath)) {
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'admin.html'));
+  res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 app.get('/admin', (req, res) => {
@@ -518,38 +518,48 @@ app.get('/logout', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-    const { email, password } = req.body;
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    db.query(sql, [email], async (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.redirect('/login?error=server');
-        }
+  const { email, password } = req.body;
+  const sql = 'SELECT * FROM users WHERE email = ?';
+  
+  db.query(sql, [email], async (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.redirect('/login?error=server');
+    }
 
-        if (results.length === 0) {
-            return res.redirect('/login?error=invalid');
-        }
+    if (results.length === 0) {
+      return res.redirect('/login?error=invalid');
+    }
 
-        const user = results[0];
+    const user = results[0];
 
-        if (user.verified !== 1) {
-            return res.redirect('/login?error=unverified');
-        }
+    if (user.status === 'Banned') {
+      const reason = encodeURIComponent(user.banReason || 'You have been banned from the platform.');
+      return res.redirect(`/login?error=banned&reason=${reason}`);
+    }
 
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-            return res.redirect('/login?error=invalid');
-        }
+    if (user.verified !== 1) {
+      return res.redirect('/login?error=unverified');
+    }
 
-        req.session.user = {
-            id: user.id,
-            name: user.name,
-            email: user.email
-        };
-        console.log('Session after login:', req.session.user);
-        return res.redirect('/homepage');
-    });
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.redirect('/login?error=invalid');
+    }
+
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      status: user.status
+    };
+
+    console.log('Session after login:', req.session.user);
+
+    return res.redirect(user.status === 'Admin' ? '/admin' : '/homepage');
+  });
 });
+
 
 
 const transporter = nodemailer.createTransport({
@@ -584,7 +594,7 @@ app.post('/register', async (req, res) => {
       const verificationToken = crypto.randomBytes(32).toString('hex');
 
       // Insert user with token and verified=false
-      const insertSql = `INSERT INTO users (name, email, password, verified, verification_token) VALUES (?, ?, ?, 0, ?)`;
+      const insertSql = `INSERT INTO users (name, email, password, verified, verification_token, status) VALUES (?, ?, ?, 0, ?, 'Unverified')`;
       db.query(insertSql, [name, email, hashedPassword, verificationToken], async (err, result) => {
         if (err) {
           console.error(err);
@@ -595,7 +605,7 @@ app.post('/register', async (req, res) => {
         const verifyUrl = `http://localhost:3000/verify?token=${verificationToken}`;  // Update domain for production
 
         const mailOptions = {
-          from: '"Your App Name" <oniljauculan@gmail.com>',
+          from: '"Baynsil" <oniljauculan@gmail.com>',
           to: email,
           subject: 'Please verify your email',
           html: `<p>Hi ${name},</p>
@@ -798,7 +808,12 @@ app.get('/verify', (req, res) => {
     return res.status(400).send('Verification token is missing.');
   }
 
-  const sql = `UPDATE users SET verified = 1, verification_token = NULL WHERE verification_token = ?`;
+  const sql = `
+    UPDATE users 
+    SET verified = 1, status = 'Active', verification_token = NULL 
+    WHERE verification_token = ?
+  `;
+
   db.query(sql, [token], (err, result) => {
     if (err) {
       console.error(err);
@@ -1107,6 +1122,152 @@ app.get('/api/admin/listings/recent', (req, res) => {
     res.json(results);
   });
 });
+
+app.get('/api/admin/users', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const perPage = parseInt(req.query.perPage) || 10;
+  const offset = (page - 1) * perPage;
+
+  const search = req.query.search || '';
+  const status = req.query.status || 'all';
+  const sort = req.query.sort || 'newest';
+
+  // Base WHERE clause excluding Admins
+  let whereClause = `WHERE (u.name LIKE ? OR u.email LIKE ?) AND (u.status IS NULL OR u.status != 'Admin')`;
+  let params = [`%${search}%`, `%${search}%`];
+
+  // Apply filters
+  if (status === 'active') {
+    whereClause += ` AND u.verified = 1 AND (u.status IS NULL OR u.status != 'Banned')`;
+  } else if (status === 'unverified') {
+    whereClause += ` AND u.verified = 0`;
+  } else if (status === 'banned') {
+    whereClause += ` AND u.status = 'Banned'`;
+  }
+
+  // Sorting logic
+  let sortColumn = 'u.joinDate';
+  let sortOrder = 'DESC';
+
+  if (sort === 'oldest') {
+    sortColumn = 'u.joinDate';
+    sortOrder = 'ASC';
+  } else if (sort === 'name-asc') {
+    sortColumn = 'u.name';
+    sortOrder = 'ASC';
+  } else if (sort === 'name-desc') {
+    sortColumn = 'u.name';
+    sortOrder = 'DESC';
+  }
+
+  const sql = `
+    SELECT 
+      u.id AS _id,
+      u.name,
+      u.email,
+      u.profilepic AS profilePic,
+      u.verified,
+      u.status,
+      u.joinDate AS createdAt,
+      COUNT(l.item_id) AS listingCount
+    FROM users u
+    LEFT JOIN listings l ON u.id = l.seller_id
+    ${whereClause}
+    GROUP BY u.id
+    ORDER BY ${sortColumn} ${sortOrder}
+    LIMIT ? OFFSET ?
+  `;
+
+  const countSql = `
+    SELECT COUNT(*) AS total FROM users u
+    ${whereClause}
+  `;
+
+  db.query(countSql, params, (countErr, countResults) => {
+    if (countErr) {
+      console.error('Count error:', countErr);
+      return res.status(500).json({ error: 'Failed to count users' });
+    }
+
+    db.query(sql, [...params, perPage, offset], (err, results) => {
+      if (err) {
+        console.error('Error fetching users:', err);
+        return res.status(500).json({ error: 'Failed to fetch users' });
+      }
+
+      const users = results.map(user => {
+        let userStatus = 'Unverified';
+        if (user.status === 'Banned') {
+          userStatus = 'Banned';
+        } else if (user.verified === 1) {
+          userStatus = 'Active';
+        }
+
+        return {
+          ...user,
+          isBanned: userStatus === 'Banned',
+          status: userStatus
+        };
+      });
+
+      res.json({
+        users,
+        total: countResults[0].total,
+        currentPage: page,
+        perPage
+      });
+    });
+  });
+});
+
+app.post('/api/admin/users/:id/ban', (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { reason } = req.body;
+
+  if (!userId || !reason || reason.trim() === '') {
+    return res.status(400).json({ message: 'Invalid user ID or reason' });
+  }
+
+  const sql = `UPDATE users SET status = 'Banned', banReason = ? WHERE id = ?`;
+
+  db.query(sql, [reason, userId], (err, result) => {
+    if (err) {
+      console.error('Error banning user:', err);
+      return res.status(500).json({ message: 'Failed to ban user' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User banned successfully' });
+  });
+});
+
+app.post('/api/admin/users/:id/unban', (req, res) => {
+  const userId = req.params.id;
+
+  const sql = `
+    UPDATE users
+    SET status = 'Active', banReason = NULL
+    WHERE id = ? AND status = 'Banned'
+  `;
+
+  db.query(sql, [userId], (err, result) => {
+    if (err) {
+      console.error('Error unbanning user:', err);
+      return res.status(500).json({ message: 'Failed to unban user' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found or not banned' });
+    }
+
+    res.json({ message: 'User unbanned successfully' });
+  });
+});
+
+
 
 
 // Start server
