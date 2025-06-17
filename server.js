@@ -1508,19 +1508,22 @@ app.get('/api/admin/reports', (req, res) => {
   let filters = [];
   let params = [];
 
+  // Filter by status (case-insensitive)
   if (status && status.toLowerCase() !== 'all') {
     filters.push('LOWER(r.status) = ?');
     params.push(status.toLowerCase());
   }
 
+  // Filter by reporter name (case-insensitive)
   if (reporter) {
-    filters.push('reporter.name LIKE ?');
-    params.push(`%${reporter}%`);
+    filters.push('LOWER(reporter.name) LIKE ?');
+    params.push(`%${reporter.toLowerCase()}%`);
   }
 
+  // Filter by reported user name (case-insensitive)
   if (reported) {
-    filters.push('reported.name LIKE ?');
-    params.push(`%${reported}%`);
+    filters.push('LOWER(reported.name) LIKE ?');
+    params.push(`%${reported.toLowerCase()}%`);
   }
 
   const whereClause = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
