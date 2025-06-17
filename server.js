@@ -1134,11 +1134,9 @@ app.get('/api/admin/users', (req, res) => {
   const status = req.query.status || 'all';
   const sort = req.query.sort || 'newest';
 
-  // Base WHERE clause excluding Admins
   let whereClause = `WHERE (u.name LIKE ? OR u.email LIKE ?) AND (u.status IS NULL OR u.status != 'Admin')`;
   let params = [`%${search}%`, `%${search}%`];
 
-  // Apply filters
   if (status === 'active') {
     whereClause += ` AND u.verified = 1 AND (u.status IS NULL OR u.status != 'Banned')`;
   } else if (status === 'unverified') {
@@ -1147,7 +1145,6 @@ app.get('/api/admin/users', (req, res) => {
     whereClause += ` AND u.status = 'Banned'`;
   }
 
-  // Sorting logic
   let sortColumn = 'u.joinDate';
   let sortOrder = 'DESC';
 
@@ -1160,6 +1157,9 @@ app.get('/api/admin/users', (req, res) => {
   } else if (sort === 'name-desc') {
     sortColumn = 'u.name';
     sortOrder = 'DESC';
+  }else if (sort === 'most-reported') {
+    sortColumn = 'reportCount';         // ✅ sort by reportCount
+    sortOrder = 'DESC';                 // ✅ descending = most reported first
   }
 
   const sql = `
@@ -1171,9 +1171,9 @@ app.get('/api/admin/users', (req, res) => {
       u.verified,
       u.status,
       u.joinDate AS createdAt,
-      COUNT(l.item_id) AS listingCount
+      COUNT(r.id) AS reportCount
     FROM users u
-    LEFT JOIN listings l ON u.id = l.seller_id
+    LEFT JOIN reports r ON u.id = r.reported_user_id
     ${whereClause}
     GROUP BY u.id
     ORDER BY ${sortColumn} ${sortOrder}
@@ -1490,7 +1490,7 @@ app.post('/api/report-user', (req, res) => {
         date: new Date()
     };
 
-    const query = `INSERT INTO reports (reportedUser, reporter, reason, status, date) VALUES (?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO reports (reported_user_id, reporter_id, reason, status, date) VALUES (?, ?, ?, ?, ?)`;
 
     db.query(query, [reportData.reportedUser, reportData.reporter, reportData.reason, reportData.status, reportData.date], (err, results) => {
         if (err) {
@@ -1503,21 +1503,24 @@ app.post('/api/report-user', (req, res) => {
 });
 
 app.get('/api/admin/reports', (req, res) => {
-  const { status, search } = req.query;
+  const { status, reporter, reported } = req.query;
 
   let filters = [];
   let params = [];
 
-  // Case-insensitive status filter
   if (status && status.toLowerCase() !== 'all') {
     filters.push('LOWER(r.status) = ?');
     params.push(status.toLowerCase());
   }
 
-  // Search filter for reporter or reported user names
-  if (search) {
-    filters.push('(reporter.name LIKE ? OR reported.name LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`);
+  if (reporter) {
+    filters.push('reporter.name LIKE ?');
+    params.push(`%${reporter}%`);
+  }
+
+  if (reported) {
+    filters.push('reported.name LIKE ?');
+    params.push(`%${reported}%`);
   }
 
   const whereClause = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
@@ -1568,6 +1571,86 @@ app.get('/api/admin/reports', (req, res) => {
   });
 });
 
+// GET /api/admin/reports/:id
+app.get('/api/admin/reports/:id', (req, res) => {
+  const reportId = req.params.id;
+
+  const sql = `
+    SELECT 
+      r.id,
+      r.reason,
+      r.status,
+      r.date,
+      reporter.id AS reporterId,
+      reporter.name AS reporterName,
+      reporter.profilepic AS reporterProfilePic,
+      reported.id AS reportedId,
+      reported.name AS reportedName,
+      reported.profilepic AS reportedProfilePic
+    FROM reports r
+    JOIN users reporter ON r.reporter_id = reporter.id
+    JOIN users reported ON r.reported_user_id = reported.id
+    WHERE r.id = ?
+  `;
+
+  db.query(sql, [reportId], (err, results) => {
+    if (err) {
+      console.error('Error fetching report details:', err);
+      return res.status(500).json({ message: 'Error loading report details' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    const r = results[0];
+    const report = {
+      id: r.id,
+      reason: r.reason,
+      details: r.details,
+      resolved: r.status.toLowerCase() === 'resolved',
+      date: r.date,
+      reporter: {
+        id: r.reporterId,
+        name: r.reporterName,
+        profilePic: r.reporterProfilePic
+      },
+      reportedUser: {
+        id: r.reportedId,
+        name: r.reportedName,
+        profilePic: r.reportedProfilePic
+      }
+    };
+
+    res.json(report);
+  });
+});
+
+app.post('/api/admin/reports/:id/resolve', (req, res) => {
+  const reportId = req.params.id;
+  const { takeAction } = req.body;
+
+  const sql = `
+    UPDATE reports 
+    SET status = ? 
+    WHERE id = ?
+  `;
+
+  const newStatus =  'Resolved';
+
+  db.query(sql, [newStatus, reportId], (err, result) => {
+    if (err) {
+      console.error('Error updating report:', err);
+      return res.status(500).json({ error: 'Failed to resolve report' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+
+    res.json({ message: 'Report updated successfully' });
+  });
+});
 
 
 // Start server

@@ -84,17 +84,6 @@
         <img class="h-12 w-auto" src="/public/uploads/logo1.png" alt="">
         <span class="text-2xl font-bold text-primary-600">BaynSil Admin</span>
       </div>
-      
-      <!-- Admin actions -->
-      <div class="flex items-center space-x-4">
-        <a href="/profile">
-          <button class="p-2 text-gray-600 hover:text-primary-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </button>
-        </a>
-      </div>
     </div>
   </header>
 
@@ -190,12 +179,12 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported User</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reported User</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -304,11 +293,8 @@
       </div>
       
       <div class="mt-6 flex justify-end space-x-3">
-        <button onclick="resolveReport(false)" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Dismiss
-        </button>
-        <button onclick="resolveReport(true)" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
-          Take Action
+        <button id="resolveButton" onclick="resolveReport(true)" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
+          Resolve
         </button>
       </div>
     </div>
@@ -404,32 +390,31 @@
 
   paginatedReports.forEach(report => {
     const row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50';
+    row.className = 'hover:bg-gray-50 w-full';
 
     const statusBadge = report.resolved
       ? '<span class="badge badge-success">Resolved</span>'
       : '<span class="badge badge-warning">Pending</span>';
 
     row.innerHTML = `
-      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${report.id}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <div class="flex items-center">
-          <img src="/uploads/${report.reportedUser.profilePic || '/uploads/defaultprofile.webp'}" alt="${report.reportedUser.name}" class="w-8 h-8 rounded-full mr-2">
-          <span>${report.reportedUser.name}</span>
+      <td class="text-center px-4 py-4 w-16 text-sm font-medium text-gray-900">${report.id}</td>
+      <td class=" px-4 py-4 w-48 text-sm text-gray-500">
+        <div class="flex items-center justify-center">
+          <img src="/uploads/${report.reportedUser.profilePic || 'defaultprofile.webp'}" alt="${report.reportedUser.name}" class="w-8 h-8 rounded-full mr-2">
+          <span class="truncate">${report.reportedUser.name}</span>
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        <div class="flex items-center">
-          <img src="/uploads/${report.reporter.profilePic || '/uploads/defaultprofile.webp'}" alt="${report.reporter.name}" class="w-8 h-8 rounded-full mr-2">
-          <span>${report.reporter.name}</span>
+      <td class="px-4 py-4 w-48 text-sm text-gray-500">
+        <div class="flex items-center justify-center">
+          <img src="/uploads/${report.reporter.profilePic || 'defaultprofile.webp'}" alt="${report.reporter.name}" class="w-8 h-8 rounded-full mr-2">
+          <span class="truncate">${report.reporter.name}</span>
         </div>
       </td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${report.reason}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusBadge}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(report.date).toLocaleDateString()}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+      <td class="text-center px-4 py-4 text-sm text-gray-500 whitespace-normal break-words">${report.reason}</td>
+      <td class="text-center px-4 py-4 w-28 text-sm text-gray-500 text-center">${statusBadge}</td>
+      <td class="text-center px-4 py-4 w-32 text-sm text-gray-500 text-center">${new Date(report.date).toLocaleDateString()}</td>
+      <td class="text-center px-4 py-4 w-40 text-sm font-medium">
         <button onclick="viewReportDetails('${report.id}')" class="text-primary-600 hover:text-primary-900 mr-3">View</button>
-        ${report.resolved ? '' : `<button onclick="showResolveOptions('${report.id}')" class="text-green-600 hover:text-green-900">Resolve</button>`}
       </td>
     `;
 
@@ -489,15 +474,21 @@
       try {
         const response = await fetch(`/api/admin/reports/${reportId}`);
         const report = await response.json();
-        
-        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic || '/public/uploads/defaultprofile.webp';
+
+        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic 
+          ? `/uploads/${report.reportedUser.profilePic}` 
+          : '/uploads/defaultprofile.webp';
+
         document.getElementById('reportedUserName').textContent = report.reportedUser.name;
-        document.getElementById('reporterUserImg').src = report.reporter.profilePic || '/public/uploads/defaultprofile.webp';
+
+        document.getElementById('reporterUserImg').src = report.reporter.profilePic
+          ? `/uploads/${report.reporter.profilePic}`
+          : '/uploads/defaultprofile.webp';
+
         document.getElementById('reporterUserName').textContent = report.reporter.name;
         document.getElementById('reportReason').textContent = report.reason;
-        document.getElementById('reportDetails').textContent = report.details || 'No additional details provided';
-        document.getElementById('reportDate').textContent = new Date(report.date).toLocaleString();
-        
+        document.getElementById('reportDate').textContent = new Date(report.date).toLocaleDateString();
+
         // Update status badge
         const statusBadge = document.getElementById('reportStatus');
         statusBadge.innerHTML = '';
@@ -505,7 +496,15 @@
         badge.className = report.resolved ? 'badge badge-success' : 'badge badge-warning';
         badge.textContent = report.resolved ? 'Resolved' : 'Pending';
         statusBadge.appendChild(badge);
-        
+
+        // Show or hide resolve button based on report status
+        const resolveButton = document.getElementById('resolveButton');
+        if (report.resolved) {
+          resolveButton.classList.add('hidden');
+        } else {
+          resolveButton.classList.remove('hidden');
+        }
+
         selectedReportId = reportId;
         showModal('reportDetailModal');
       } catch (error) {
@@ -513,6 +512,7 @@
         showNotification('Failed to load report details', false);
       }
     }
+
 
     // Resolve report (from modal)
     async function resolveReport(takeAction) {

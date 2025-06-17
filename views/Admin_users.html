@@ -172,6 +172,7 @@
                 <option value="oldest">Oldest First</option>
                 <option value="name-asc">Name (A-Z)</option>
                 <option value="name-desc">Name (Z-A)</option>
+                <option value="most-reported">Most Reported</option>
               </select>
             </div>
           </div>
@@ -183,22 +184,22 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     User
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Joined
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Listings
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reported (by other user)
                   </th>
-                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -521,19 +522,19 @@
               </div>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap">
+          <td class="text-center px-6 py-4 whitespace-nowrap">
             <div class="text-sm text-gray-900">${user.email}</div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap">
+          <td class="text-center px-6 py-4 whitespace-nowrap">
             <div class="text-sm text-gray-500">${joinDate}</div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap">
+          <td class="text-center px-6 py-4 whitespace-nowrap">
             ${statusBadge}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${user.listingCount || 0}
+          <td class="text-center px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            ${user.reportCount || 0}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+          <td class="text-center px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
             ${user.status === 'Banned' ? 
               `<button onclick="showUnbanUserModal('${user._id}', '${user.name}')" class="text-green-600 hover:text-green-900">Unban</button>` : 
               `<button onclick="showBanUserModal('${user._id}', '${user.name}')" class="text-red-600 hover:text-red-900">Ban</button>`}
