@@ -368,14 +368,16 @@ app.get('/api/search-users', (req, res) => {
 
 app.get('/api/products', (req, res) => {
     const { search, category, subcategory, sort } = req.query;
+    const currentUserId = req.session.user.id;
+
 
     let query = `
         SELECT listings.*, users.name AS seller_name 
         FROM listings 
         JOIN users ON listings.seller_id = users.id 
-        WHERE listings.status != 'Sold'
+        WHERE listings.status != 'Sold' AND listings.status != 'Banned' AND listings.seller_id != ?
     `;
-    const params = [];
+    const params = [currentUserId];
 
     if (search) {
         query += ` AND listings.item_name LIKE ?`;
@@ -1267,6 +1269,304 @@ app.post('/api/admin/users/:id/unban', (req, res) => {
   });
 });
 
+app.get('/api/admin/listings', (req, res) => {
+  const {
+    status,
+    category,
+    subcategory,
+    minPrice,
+    maxPrice,
+    search,
+    seller, // <-- NEW
+    page = 1
+  } = req.query;
+
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  let filters = [];
+  let params = [];
+
+  // Filter: Status
+  if (status) {
+    filters.push('l.status = ?');
+    params.push(status);
+  }
+
+  // Filter: Category
+  if (category && category !== 'All') {
+    filters.push('l.category = ?');
+    params.push(category);
+  }
+
+  // Filter: Subcategory
+  if (subcategory && subcategory !== 'All') {
+    filters.push('l.seccategory = ?');
+    params.push(subcategory);
+  }
+
+  // Filter: Price Range
+  if (minPrice) {
+    filters.push('l.price >= ?');
+    params.push(minPrice);
+  }
+
+  if (maxPrice) {
+    filters.push('l.price <= ?');
+    params.push(maxPrice);
+  }
+
+  // Filter: Search by product name
+  if (search) {
+    filters.push('l.item_name LIKE ?');
+    params.push(`%${search}%`);
+  }
+
+  // Filter: Seller name
+  if (seller) {
+    filters.push('u.name LIKE ?');
+    params.push(`%${seller}%`);
+  }
+
+  const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+  const countSql = `SELECT COUNT(*) AS total FROM listings l JOIN users u ON l.seller_id = u.id ${whereClause}`;
+  const dataSql = `
+    SELECT 
+      l.item_id AS id,
+      l.item_name AS title,
+      l.price,
+      l.category,
+      l.seccategory,
+      l.status,
+      l.dateAdded AS createdAt,
+      l.image,
+      u.id AS userId,
+      u.name AS userName,
+      u.email AS userEmail,
+      u.profilepic AS userProfilePic
+    FROM listings l
+    JOIN users u ON l.seller_id = u.id
+    ${whereClause}
+    ORDER BY l.dateAdded DESC
+    LIMIT ? OFFSET ?
+  `;
+
+  db.query(countSql, params, (err, countResult) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Error counting listings' });
+    }
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    db.query(dataSql, [...params, limit, offset], (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error loading listings' });
+      }
+
+      const listings = results.map(row => ({
+        id: row.id,
+        title: row.title,
+        price: row.price,
+        category: row.category,
+        status: row.status,
+        createdAt: row.createdAt,
+        images: row.image ? [row.image] : [],
+        owner: {
+          id: row.userId,
+          name: row.userName,
+          email: row.userEmail,
+          profilePic: row.userProfilePic
+        }
+      }));
+
+      res.json({ listings, total, totalPages });
+    });
+  });
+});
+
+app.get('/api/admin/listings/:id', (req, res) => {
+  const listingId = req.params.id;
+
+  const sql = `
+    SELECT 
+      l.item_id AS id,
+      l.item_name AS title,
+      l.price,
+      l.description,
+      l.category,
+      l.seccategory AS subcategory,
+      l.status,
+      l.dateAdded AS createdAt,
+      l.image, -- comma-separated string
+      u.id AS userId,
+      u.name AS userName,
+      u.email AS userEmail,
+      u.profilepic AS userProfilePic
+    FROM listings l
+    JOIN users u ON l.seller_id = u.id
+    WHERE l.item_id = ?
+  `;
+
+  db.query(sql, [listingId], (err, results) => {
+    if (err) {
+      console.error('Error retrieving listing:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Listing not found' });
+    }
+
+    const row = results[0];
+    const images = row.image ? row.image.split(',').map(i => i.trim()) : [];
+
+    const listing = {
+      id: row.id,
+      title: row.title,
+      price: row.price,
+      description: row.description,
+      category: row.category,
+      subcategory: row.subcategory,
+      status: row.status,
+      createdAt: row.createdAt,
+      images,
+      owner: {
+        id: row.userId,
+        name: row.userName,
+        email: row.userEmail,
+        profilePic: row.userProfilePic || '/uploads/defaultprofile.webp'
+      }
+    };
+
+    res.json(listing);
+  });
+});
+
+app.delete('/api/admin/listings/:id', (req, res) => {
+  const listingId = req.params.id;
+  const { reason } = req.body;
+
+  if (!reason || reason.trim() === '') {
+    return res.status(400).json({ message: 'Ban reason is required.' });
+  }
+
+  const sql = `
+    UPDATE listings 
+    SET status = 'Banned', banReason = ?
+    WHERE item_id = ?
+  `;
+
+  db.query(sql, [reason, listingId], (err, result) => {
+    if (err) {
+      console.error('Error banning listing:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Listing not found' });
+    }
+
+    res.json({ message: 'Listing has been banned (soft deleted)' });
+  });
+});
+
+app.post('/api/report-user', (req, res) => {
+    const reporterId = req.session.user?.id;
+    const { userId: reportedUser, reason } = req.body;
+
+    if (!reporterId || !reportedUser || !reason) {
+        return res.status(400).json({ error: 'Missing required data' });
+    }
+
+    const reportData = {
+        reportedUser,
+        reporter: reporterId,
+        reason,
+        status: 'Pending',
+        date: new Date()
+    };
+
+    const query = `INSERT INTO reports (reportedUser, reporter, reason, status, date) VALUES (?, ?, ?, ?, ?)`;
+
+    db.query(query, [reportData.reportedUser, reportData.reporter, reportData.reason, reportData.status, reportData.date], (err, results) => {
+        if (err) {
+            console.error('Error inserting report:', err);
+            return res.status(500).json({ error: 'Failed to submit report' });
+        }
+
+        res.status(200).json({ message: 'Report submitted successfully' });
+    });
+});
+
+app.get('/api/admin/reports', (req, res) => {
+  const { status, search } = req.query;
+
+  let filters = [];
+  let params = [];
+
+  // Case-insensitive status filter
+  if (status && status.toLowerCase() !== 'all') {
+    filters.push('LOWER(r.status) = ?');
+    params.push(status.toLowerCase());
+  }
+
+  // Search filter for reporter or reported user names
+  if (search) {
+    filters.push('(reporter.name LIKE ? OR reported.name LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  const whereClause = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
+
+  const sql = `
+    SELECT 
+      r.id,
+      r.reason,
+      r.status,
+      r.date,
+      reporter.id AS reporterId,
+      reporter.name AS reporterName,
+      reporter.profilepic AS reporterProfilePic,
+      reported.id AS reportedId,
+      reported.name AS reportedName,
+      reported.profilepic AS reportedProfilePic
+    FROM reports r
+    JOIN users reporter ON r.reporter_id = reporter.id
+    JOIN users reported ON r.reported_user_id = reported.id
+    ${whereClause}
+    ORDER BY r.date DESC
+  `;
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.error('Error loading reports:', err);
+      return res.status(500).json({ message: 'Error loading reports' });
+    }
+
+    const reports = results.map(r => ({
+      id: r.id,
+      reason: r.reason,
+      resolved: r.status.toLowerCase() === 'resolved',
+      date: r.date,
+      reporter: {
+        id: r.reporterId,
+        name: r.reporterName,
+        profilePic: r.reporterProfilePic
+      },
+      reportedUser: {
+        id: r.reportedId,
+        name: r.reportedName,
+        profilePic: r.reportedProfilePic
+      }
+    }));
+
+    res.json(reports);
+  });
+});
 
 
 

@@ -279,12 +279,15 @@
         const limitedUsers = users.slice(0, 3);
 
         limitedUsers.forEach(user => {
+          const profilePicc = user.profilepic
+            ? `/uploads/${user.profilepic}` 
+            : '/uploads/defaultprofile.webp';
           const userElement = document.createElement('div');
           userElement.className = 'flex items-center justify-between py-2 border-b border-gray-100';
 
           userElement.innerHTML = `
             <div class="flex items-center">
-              <img src="${user.profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-3">
+              <img src="${profilePicc || '/uploads/defaultprofile.webp'}" alt="${user.name}" class="w-8 h-8 rounded-full mr-3">
               <div>
                 <p class="text-sm font-medium text-gray-900">${user.name}</p>
                 <p class="text-xs text-gray-500">Joined ${new Date(user.joinDate).toLocaleDateString()}</p>

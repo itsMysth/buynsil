@@ -162,14 +162,6 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div class="flex items-center space-x-4">
               <div>
-                <label for="reportType" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select id="reportType" class="w-full md:w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                  <option value="all">All Reports</option>
-                  <option value="user">User Reports</option>
-                  <option value="listing">Listing Reports</option>
-                </select>
-              </div>
-              <div>
                 <label for="reportStatusFilter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select id="reportStatusFilter" class="w-full md:w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="all">All Statuses</option>
@@ -204,7 +196,7 @@
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody id="reportsTableBody" class="bg-white divide-y divide-gray-200">
@@ -344,7 +336,6 @@
       loadReports();
       
       // Set up event listeners for filters
-      document.getElementById('reportType').addEventListener('change', loadReports);
       document.getElementById('reportStatusFilter').addEventListener('change', loadReports);
       document.getElementById('searchReports').addEventListener('input', debounce(loadReports, 300));
       
@@ -370,11 +361,10 @@
     // Load reports with filters
     async function loadReports() {
       try {
-        const type = document.getElementById('reportType').value;
         const status = document.getElementById('reportStatusFilter').value;
         const search = document.getElementById('searchReports').value;
         
-        const response = await fetch(`/api/admin/reports?type=${type}&status=${status}&search=${search}`);
+        const response = await fetch(`/api/admin/reports?status=${status}&search=${search}`);
         allReports = await response.json();
         
         renderReports();
@@ -393,59 +383,60 @@
 
     // Render reports in the table
     function renderReports() {
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedReports = allReports.slice(startIndex, endIndex);
-      
-      const tableBody = document.getElementById('reportsTableBody');
-      
-      if (paginatedReports.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-              No reports found matching your criteria.
-            </td>
-          </tr>
-        `;
-        return;
-      }
-      
-      tableBody.innerHTML = '';
-      
-      paginatedReports.forEach(report => {
-        const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50';
-        
-        // Determine status badge
-        let statusBadge = '';
-        if (report.resolved) {
-          statusBadge = '<span class="badge badge-success">Resolved</span>';
-        } else {
-          statusBadge = '<span class="badge badge-warning">Pending</span>';
-        }
-        
-        row.innerHTML = `
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${report.id}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">${report.type}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${reportedItem}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <div class="flex items-center">
-              <img src="${report.reporter.profilePic || '/uploads/defaultprofile.webp'}" alt="${report.reporter.name}" class="w-8 h-8 rounded-full mr-2">
-              <span>${report.reporter.name}</span>
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${report.reason}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusBadge}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(report.date).toLocaleDateString()}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button onclick="viewReportDetails('${report.id}')" class="text-primary-600 hover:text-primary-900 mr-3">View</button>
-            ${report.resolved ? '' : `<button onclick="showResolveOptions('${report.id}')" class="text-green-600 hover:text-green-900">Resolve</button>`}
-          </td>
-        `;
-        
-        tableBody.appendChild(row);
-      });
-    }
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReports = allReports.slice(startIndex, endIndex);
+  
+  const tableBody = document.getElementById('reportsTableBody');
+
+  if (paginatedReports.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+          No reports found matching your criteria.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tableBody.innerHTML = '';
+
+  paginatedReports.forEach(report => {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const statusBadge = report.resolved
+      ? '<span class="badge badge-success">Resolved</span>'
+      : '<span class="badge badge-warning">Pending</span>';
+
+    row.innerHTML = `
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${report.id}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <div class="flex items-center">
+          <img src="/uploads/${report.reportedUser.profilePic || '/uploads/defaultprofile.webp'}" alt="${report.reportedUser.name}" class="w-8 h-8 rounded-full mr-2">
+          <span>${report.reportedUser.name}</span>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <div class="flex items-center">
+          <img src="/uploads/${report.reporter.profilePic || '/uploads/defaultprofile.webp'}" alt="${report.reporter.name}" class="w-8 h-8 rounded-full mr-2">
+          <span>${report.reporter.name}</span>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${report.reason}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusBadge}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(report.date).toLocaleDateString()}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <button onclick="viewReportDetails('${report.id}')" class="text-primary-600 hover:text-primary-900 mr-3">View</button>
+        ${report.resolved ? '' : `<button onclick="showResolveOptions('${report.id}')" class="text-green-600 hover:text-green-900">Resolve</button>`}
+      </td>
+    `;
+
+    tableBody.appendChild(row);
+  });
+}
+
 
     // Render pagination controls
     function renderPagination() {
@@ -469,7 +460,9 @@
       }
       
       // Previous button state
-      document.getElementById('prevPage').classList.toggle('opacity-50 cursor-not-allowed', currentPage === 1);
+      const prevBtn = document.getElementById('prevPage');
+      prevBtn.classList.toggle('opacity-50', currentPage === 1);
+      prevBtn.classList.toggle('cursor-not-allowed', currentPage === 1);
       
       // Page numbers
       for (let i = startPage; i <= endPage; i++) {
@@ -486,7 +479,9 @@
       }
       
       // Next button state
-      document.getElementById('nextPage').classList.toggle('opacity-50 cursor-not-allowed', currentPage === totalPages);
+      const nextBtn = document.getElementById('nextPage');
+      nextBtn.classList.toggle('opacity-50', currentPage === totalPages);
+      nextBtn.classList.toggle('cursor-not-allowed', currentPage === totalPages);
     }
 
     // View report details (opens modal)
@@ -495,9 +490,9 @@
         const response = await fetch(`/api/admin/reports/${reportId}`);
         const report = await response.json();
         
-        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic || '/uploads/defaultprofile.webp';
+        document.getElementById('reportedUserImg').src = report.reportedUser.profilePic || '/public/uploads/defaultprofile.webp';
         document.getElementById('reportedUserName').textContent = report.reportedUser.name;
-        document.getElementById('reporterUserImg').src = report.reporter.profilePic || '/uploads/defaultprofile.webp';
+        document.getElementById('reporterUserImg').src = report.reporter.profilePic || '/public/uploads/defaultprofile.webp';
         document.getElementById('reporterUserName').textContent = report.reporter.name;
         document.getElementById('reportReason').textContent = report.reason;
         document.getElementById('reportDetails').textContent = report.details || 'No additional details provided';
