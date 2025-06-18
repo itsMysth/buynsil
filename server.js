@@ -1072,7 +1072,7 @@ app.get('/api/admin/stats', (req, res) => {
           stats.pendingReports = result[0].pendingReports;
 
           // Query 5: Resolved Today
-          db.query("SELECT COUNT(*) AS resolvedToday FROM reports WHERE status = 'Resolved' AND date = CURDATE()", (err, result) => {
+          db.query("SELECT COUNT(*) AS resolvedToday FROM reports WHERE status = 'Resolved' AND DATE(resolved_at) = CURDATE()", (err, result) => {
             if (err) {
               console.error('Error fetching resolved reports:', err);
               return res.status(500).json({ error: 'Error fetching resolved reports' });
@@ -1635,7 +1635,8 @@ app.post('/api/admin/reports/:id/resolve', (req, res) => {
 
   const sql = `
     UPDATE reports 
-    SET status = ? 
+    SET status = ? ,
+    resolved_at = NOW()
     WHERE id = ?
   `;
 
