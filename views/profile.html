@@ -154,12 +154,20 @@
             </a>
           </li>
           <li>
-            <a href="/saveditems" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
-              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-              </svg>
-              <span class="font-medium">Saved</span>
-            </a>
+              <a href="/saveditems" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                  </svg>
+                  <span class="font-medium">Saved</span>
+              </a>
+          </li>
+          <li>
+              <a href="/transactions" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 14h6m-3-3v6m3-13H6a2 2 0 00-2 2v14l3-3 3 3 3-3 3 3 3-3 1.5 1.5a1 1 0 001.5-.866V6a2 2 0 00-2-2z" />
+                  </svg>
+                  <span class="font-medium">Transactions</span>
+              </a>
           </li>
           <li>
             <a href="/profile" class="nav-item flex items-center px-4 py-3 text-primary-600 bg-primary-50 rounded-lg">
@@ -186,9 +194,19 @@
     <main class="flex-1 p-6 bg-gray-50">
       <div class="container mx-auto">
         <!-- Page Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">Profile Settings</h1>
-          <p class="text-gray-600 mt-2">Manage your personal information and preferences</p>
+        <div class="mb-8 flex justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Profile Settings</h1>
+            <p class="text-gray-600 mt-2 mb-4">Manage your personal information and preferences</p>
+          </div>
+
+          <div class="flex items-center space-x-4 bg-gray-100 px-4 py-4 rounded-lg shadow-sm max-w-3xl">
+            <p class="text-sm text-gray-500 whitespace-nowrap">Wallet Balance:</p>
+            <p class="text-xl font-semibold text-gray-800 whitespace-nowrap">₱<span id="wallet-balance">0.00</span></p>
+            <button onclick="showModal('addFundsModal')" class="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
+              + Add Funds
+            </button>
+          </div>
         </div>
 
         <!-- Profile Form -->
@@ -390,6 +408,46 @@
     </div>
   </div>
 
+ <!-- Add Funds Modal -->
+  <div id="addFundsModal" class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg w-full max-w-md shadow-lg">
+      <div class="flex justify-between items-center border-b px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-800">Add Funds</h2>
+        <button onclick="hideModal('addFundsModal')" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="px-6 py-4 space-y-4">
+        <label for="fundAmount" class="block text-sm text-gray-600">Enter amount to add:</label>
+        <input
+          id="fundAmount"
+          type="number"
+          min="1"
+          placeholder="e.g. 250"
+          class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-primary-500 focus:border-primary-500"
+        />
+      </div>
+      <div class="border-t px-6 py-4 flex justify-end space-x-3">
+        <button onclick="hideModal('addFundsModal')" class="text-sm text-gray-600 hover:underline">Cancel</button>
+        <button onclick="submitAddFunds()" class="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addFundsStatusModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+      <h2 id="addFundsModalTitle" class="text-lg font-semibold mb-4">Status</h2>
+      <p id="addFundsModalMessage" class="mb-6">Your result message here.</p>
+      <button onclick="hideModal('addFundsStatusModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+        Close
+      </button>
+    </div>
+  </div>
+
   <div id="bioUpdatedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
       <h2 class="text-lg font-semibold mb-4">Bio Updated</h2>
@@ -482,6 +540,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadUserProfile();
       loadUserInfo();
+      fetchWalletBalance();
     });
 
     async function loadUserProfile() {
@@ -755,6 +814,66 @@
         dot.classList.add('hidden');
         }
     });
+
+function submitAddFunds() {
+  const input = document.getElementById('fundAmount');
+  const amount = parseFloat(input.value);
+
+  const modalTitle = document.getElementById('addFundsModalTitle');
+  const modalMessage = document.getElementById('addFundsModalMessage');
+
+  if (isNaN(amount) || amount <= 0) {
+    modalTitle.textContent = 'Error';
+    modalMessage.textContent = 'Please enter a valid amount greater than 0.';
+    showModal('addFundsStatusModal');
+    return;
+  }
+
+  fetch('/api/wallet/topup', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ amount })
+  })
+    .then(res => res.json())
+    .then(data => {
+      const title = data.success ? 'Success' : 'Error';
+      const message = data.message || (data.success ? 'Funds added.' : 'Failed to add funds.');
+
+      if (data.success) {
+        document.getElementById('wallet-balance').textContent = data.newBalance.toFixed(2);
+        hideModal('addFundsModal');
+      }
+
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      showModal('addFundsStatusModal');
+    })
+    .catch(err => {
+      console.error(err);
+      modalTitle.textContent = 'Error';
+      modalMessage.textContent = 'Something went wrong. Please try again later.';
+      showModal('addFundsStatusModal');
+    });
+}
+
+function fetchWalletBalance() {
+  fetch('/api/wallet/balance')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('wallet-balance').textContent = parseFloat(data.balance).toFixed(2);
+      } else {
+        console.warn('Could not load wallet balance:', data.message);
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching wallet balance:', err);
+    });
+}
+
+
 
   </script>
 </body>

@@ -152,6 +152,14 @@
                         </a>
                     </li>
                     <li>
+                        <a href="/transactions" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 14h6m-3-3v6m3-13H6a2 2 0 00-2 2v14l3-3 3 3 3-3 3 3 3-3 1.5 1.5a1 1 0 001.5-.866V6a2 2 0 00-2-2z" />
+                            </svg>
+                            <span class="font-medium">Transactions</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="/profile" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -322,6 +330,59 @@
             </div>
         </div>
 
+        <div id="buyConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4">Confirm Purchase</h2>
+                <p class="mb-6">Are you sure you want to buy this item?</p>
+                <div class="flex justify-center gap-4">
+                    <button onclick="hideModal('buyConfirmModal')" class="px-4 py-2 text-sm text-gray-600 hover:underline">Cancel</button>
+                   <button id="confirmBuyBtn" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm">
+                    Yes, Buy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="paymentMethodModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4">Select Payment Method</h2>
+
+                <div class="flex flex-col space-y-3 mb-6">
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="payment-method" value="wallet" class="text-primary-600" checked>
+                    <span>Wallet</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="payment-method" value="cod" class="text-primary-600">
+                    <span>Cash on Delivery</span>
+                </label>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                <button onclick="hideModal('paymentMethodModal')" class="text-sm text-gray-600 hover:underline">Cancel</button>
+                <button onclick="confirmPaymentChoice()" class="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
+                    Confirm
+                </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="insufficientFundsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4 text-red-600">Insufficient Funds</h2>
+                <p class="mb-6">You don’t have enough balance in your wallet to complete this purchase.</p>
+                <div class="flex justify-center gap-4">
+                <button onclick="hideModal('insufficientFundsModal')" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm">
+                    Cancel
+                </button>
+                <button onclick="showModal('addFundsModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm">
+                    Add Funds
+                </button>
+                </div>
+            </div>
+        </div>
+
 
     </div>
 
@@ -457,81 +518,102 @@
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
         });
         }
+        
+        let selectedSellerId = null;
+        let selectedItemId = null;
+        let selectedPrice = null;
 
-        // Show product details modal
         function showProductDetails(item) {
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 p-4';
-            modal.innerHTML = `
-                <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-2xl font-bold">${item.item_name}</h3>
-                            <button class="close-modal text-gray-500 hover:text-gray-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div class="mb-6">
-                            <div class="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-                                ${item.image ? 
-                                    `<img src="${item.image}" alt="${item.item_name}" class="h-full w-full object-contain">` : 
-                                    `<span class="text-gray-500">No Image Available</span>`}
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <p class="text-sm text-gray-500">Price</p>
-                                <p class="font-bold text-primary-600">$${item.price}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Category</p>
-                                <p class="font-medium">${item.category || 'General'}${item.seccategory ? ' > ' + item.seccategory : ''}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Seller</p>
-                                <button onclick="showSellerInfo(${item.seller_id})" ><p class="text-sm text-blue-600 cursor-pointer hover:text-blue-700 hover:underline">${item.seller_name || 'Unknown'}</p></button>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Date Posted</p>
-                                <p class="text-sm">${item.dateAdded ? formatDate(item.dateAdded) : 'N/A'}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-6">
-                            <p class="text-sm text-gray-500">Description</p>
-                            <p class="mt-1">${item.description || 'No description provided.'}</p>
-                        </div>
-                        
-                        <div class="flex justify-end space-x-3">
-                            <button class="contact-seller bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
-                                Contact Seller
-                            </button>
-                        </div>
-                    </div>
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                <h3 class="text-2xl font-bold">${item.item_name}</h3>
+                <button class="close-modal text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
                 </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            });
 
-            modal.querySelector('.close-modal').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
+                <div class="mb-6">
+                <div class="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
+                    ${
+                    item.image
+                        ? `<img src="${item.image}" alt="${item.item_name}" class="h-full w-full object-contain">`
+                        : `<span class="text-gray-500">No Image Available</span>`
+                    }
+                </div>
+                </div>
 
-            modal.querySelectorAll('.contact-seller').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    window.location.href = `/messages/${item.seller_id}?name=${item.seller_name}`;
-                });
-            });
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <p class="text-sm text-gray-500">Price</p>
+                    <p class="font-bold text-primary-600">₱${item.price}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Category</p>
+                    <p class="font-medium">${item.category || 'General'}${item.seccategory ? ' > ' + item.seccategory : ''}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Seller</p>
+                    <button onclick="showSellerInfo(${item.seller_id})">
+                    <p class="text-sm text-blue-600 cursor-pointer hover:text-blue-700 hover:underline">${item.seller_name || 'Unknown'}</p>
+                    </button>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Date Posted</p>
+                    <p class="text-sm">${item.dateAdded ? formatDate(item.dateAdded) : 'N/A'}</p>
+                </div>
+                </div>
+
+                <div class="mb-6">
+                <p class="text-sm text-gray-500">Description</p>
+                <p class="mt-1">${item.description || 'No description provided.'}</p>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                <button class="contact-seller bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
+                    Contact Seller
+                </button>
+                <button class="buy-now bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                    Buy Now
+                </button>
+                </div>
+            </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) document.body.removeChild(modal);
+        });
+
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+
+        modal.querySelector('.contact-seller').addEventListener('click', () => {
+            window.location.href = `/messages/${item.seller_id}?name=${item.seller_name}`;
+        });
+
+        modal.querySelector('.buy-now').addEventListener('click', () => {
+            showModal('buyConfirmModal');
+
+            const confirmBtn = document.getElementById('confirmBuyBtn');
+            confirmBtn.onclick = () => {
+            // Set selected values
+            selectedItemId = item.item_id;
+            selectedSellerId = item.seller_id;
+            selectedPrice = item.price;
+
+            hideModal('buyConfirmModal');
+            showModal('paymentMethodModal');
+            };
+        });
         }
 
         let savedItemsSet = new Set();
@@ -604,7 +686,7 @@
                 });
             }
         }
-        let selectedSellerId = null;
+        
         async function showSellerInfo(userId) {
             try {
                 const response = await fetch(`/api/seller/${userId}`);
@@ -682,6 +764,77 @@
                 }
             });
         
+
+async function confirmPaymentChoice() {
+if (!selectedItemId || !selectedSellerId || !selectedPrice) {
+  console.error('Missing item or seller data', {
+    selectedItemId,
+    selectedSellerId,
+    selectedPrice
+  });
+  return;
+}
+
+
+const method = document.querySelector('input[name="payment-method"]:checked')?.value;
+  if (!method) {
+    alert('Please select a payment method.');
+    return;
+  }
+
+  if (method === 'wallet') {
+    try {
+      const res = await fetch('/api/wallet/balance');
+      const data = await res.json();
+
+      if (!data.success || data.balance === undefined) {
+        throw new Error('Could not retrieve balance');
+      }
+
+      if (data.balance < selectedPrice) {
+        hideModal('paymentMethodModal');
+        showModal('insufficientFundsModal');
+        return;
+      }
+    } catch (err) {
+      console.error('Wallet check error:', err);
+      alert('Error checking wallet balance.');
+      return;
+    }
+  }
+
+  // Proceed with purchase
+  try {
+    const res = await fetch('/api/purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        itemId: selectedItemId,
+        sellerId: selectedSellerId,
+        price: selectedPrice,
+        method,
+      }),
+    });
+
+    const result = await res.json();
+    hideModal('paymentMethodModal');
+
+    if (result.success) {
+      alert('Purchase successful!');
+      location.reload(); // or reload item list
+    } else {
+      alert(result.message || 'Purchase failed.');
+    }
+  } catch (err) {
+    console.error('Purchase error:', err);
+    alert('Something went wrong during purchase.');
+  }
+}
+
+
+
     </script>
     
 </body>

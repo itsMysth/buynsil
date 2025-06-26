@@ -19,13 +19,13 @@ const db = mysql.createConnection({
     database: process.env.MYSQL_DB,
   });
  
-  db.connect((err) => {
-    if (err) {
-      console.error('Error connecting to the database:', err);
-    } else {
-      console.log('Connected to MySQL database :D');
-    }
-  });
+db.connect((err) => {
+  if (err) {
+    console.error('Error connecting to the database:', err);
+  } else {
+    console.log('Connected to MySQL database :D');
+  }
+});
 
 function ensureAuthenticated(req, res, next) {
   if (req.session.user) {
@@ -97,6 +97,10 @@ app.get('/useritems', (req, res) => {
 
 app.get('/homepage', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'homepage.html'));
+});
+
+app.get('/transactions', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'transaction.html'));
 });
 
 app.get('/saveditems', ensureAuthenticated, (req, res) => {
@@ -1655,6 +1659,142 @@ app.post('/api/admin/reports/:id/resolve', (req, res) => {
     res.json({ message: 'Report updated successfully' });
   });
 });
+
+app.post('/api/wallet/topup', (req, res) => {
+  const userId = req.session.user?.id;
+  const { amount } = req.body;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const numericAmount = parseFloat(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return res.status(400).json({ success: false, message: 'Invalid amount' });
+  }
+
+  // Step 1: Ensure wallet exists
+  db.query(
+    'INSERT IGNORE INTO wallets (user_id, balance) VALUES (?, 0)',
+    [userId],
+    (err) => {
+      if (err) {
+        console.error('[Wallet Topup Error - INSERT]', err);
+        return res.status(500).json({ success: false, message: 'Database error (insert)' });
+      }
+
+      // Step 2: Add funds
+      db.query(
+        'UPDATE wallets SET balance = balance + ? WHERE user_id = ?',
+        [numericAmount, userId],
+        (err2) => {
+          if (err2) {
+            console.error('[Wallet Topup Error - UPDATE]', err2);
+            return res.status(500).json({ success: false, message: 'Database error (update)' });
+          }
+
+          // Step 3: Return updated balance
+          db.query(
+            'SELECT balance FROM wallets WHERE user_id = ?',
+            [userId],
+            (err3, result) => {
+              if (err3 || !result.length) {
+                console.error('[Wallet Topup Error - SELECT]', err3);
+                return res.status(500).json({ success: false, message: 'Database error (select)' });
+              }
+
+              const newBalance = parseFloat(result[0].balance);
+              res.status(200).json({
+                success: true,
+                newBalance,
+                message: `₱${numericAmount} successfully added to your wallet.`
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+app.get('/api/wallet/balance', (req, res) => {
+  const userId = req.session.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  db.query('SELECT balance FROM wallets WHERE user_id = ?', [userId], (err, results) => {
+    if (err) {
+      console.error('[Wallet Balance Error]', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+
+    const balance = results.length > 0 ? parseFloat(results[0].balance) : 0.00;
+    res.status(200).json({ success: true, balance });
+  });
+});
+
+app.post('/api/purchase', async (req, res) => {
+  const buyerId = req.session.user?.id;
+  const { itemId, sellerId, price, method } = req.body;
+
+  if (!buyerId || !itemId || !sellerId || !price || !method) {
+    return res.status(400).json({ success: false, message: 'Missing data' });
+  }
+
+  try {
+    if (method === 'wallet') {
+      // Check wallet balance
+      const [walletRows] = await db.promise().query(
+        'SELECT balance FROM wallets WHERE user_id = ?',
+        [buyerId]
+      );
+      const balance = walletRows[0]?.balance ?? 0;
+
+      if (balance < price) {
+        return res.status(400).json({ success: false, message: 'Insufficient funds' });
+      }
+
+      // Deduct from buyer
+      await db.promise().query(
+        'UPDATE wallets SET balance = balance - ? WHERE user_id = ?',
+        [price, buyerId]
+      );
+
+      // Ensure seller wallet exists, then credit it
+      await db.promise().query(
+        'INSERT IGNORE INTO wallets (user_id, balance) VALUES (?, 0)',
+        [sellerId]
+      );
+      await db.promise().query(
+        'UPDATE wallets SET balance = balance + ? WHERE user_id = ?',
+        [price, sellerId]
+      );
+    }
+
+    // Mark the item as sold
+    await db.promise().query(
+      'UPDATE listings SET status = ? WHERE item_id = ?',
+      ['Sold', itemId]
+    );
+
+    // Record the transaction (without quantity)
+    await db.promise().query(
+      `INSERT INTO transactions 
+        (buyer_id, seller_id, item_id, price, status, payment_method, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [buyerId, sellerId, itemId, price, 'Completed', method]
+    );
+
+    res.status(200).json({ success: true, message: 'Purchase successful.' });
+  } catch (err) {
+    console.error('[Purchase Error]', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
 
 
 // Start server
