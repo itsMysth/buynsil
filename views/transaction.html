@@ -165,8 +165,8 @@
                     <li>
                         <a href="/saveditems" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                        </svg>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                            </svg>
                         <span class="font-medium">Saved</span>
                         </a>
                     </li>
@@ -230,6 +230,7 @@
                     <option value="shipped">Shipped</option>
                     <option value="completed">Completed</option>
                     <option value="disputed">Disputed</option>
+                    <option value="cancelled">Cancelled</option>
                 </select>
                 <select id="transaction-sort-by" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="latest">Latest</option>
@@ -305,6 +306,18 @@
             </button>
           </div>
         </div>
+
+        <div id="cancelConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+            <h2 class="text-lg font-semibold mb-4">Cancel Transaction</h2>
+            <p class="mb-6">Are you sure you want to cancel this transaction?</p>
+            <div class="flex justify-center gap-4">
+              <button id="confirmCancelBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">Yes, Cancel</button>
+              <button onclick="hideModal('cancelConfirmModal')" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md">No</button>
+            </div>
+          </div>
+        </div>
+
 
         <div id="reportProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
           <div class="bg-white rounded-lg p-6 max-w-md w-full">
@@ -395,8 +408,12 @@ function updateTransactionTable(transactions) {
     const status = tx.status;
     let actionButton = '';
 
-    if (status === 'Pending' && tx.seller_id === window.currentUserId) {
-      actionButton = `<button onclick="updateStatus(${tx.id}, 'Shipped')" class="text-blue-600 hover:text-blue-800 text-sm">Mark as Shipped</button>`;
+    if (status === 'Pending') {
+      if (tx.seller_id === window.currentUserId) {
+        actionButton = `<button onclick="updateStatus(${tx.id}, 'Shipped')" class="text-blue-600 hover:text-blue-800 text-sm">Mark as Shipped</button>`;
+      } else if (tx.buyer_id === window.currentUserId) {
+        actionButton = `<button onclick="promptCancelTransaction(${tx.id})" class="text-red-600 hover:text-red-800 text-sm">Cancel</button>`;
+      }
     } else if (status === 'Shipped' && tx.buyer_id === window.currentUserId) {
       actionButton = `
         <button onclick="updateStatus(${tx.id}, 'Completed')" class="text-green-600 hover:text-green-800 text-sm mr-2">Mark as Completed</button>
@@ -423,15 +440,16 @@ function updateTransactionTable(transactions) {
   });
 }
 
-    function getBadgeClass(status) {
-      switch (status.toLowerCase()) {
-        case 'pending': return 'bg-yellow-100 text-yellow-800';
-        case 'shipped': return 'bg-blue-100 text-blue-800';
-        case 'completed': return 'bg-green-100 text-green-800';
-        case 'refunded': return 'bg-red-100 text-red-800';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    }
+
+function getBadgeClass(status) {
+  switch (status.toLowerCase()) {
+    case 'pending': return 'bg-yellow-100 text-yellow-800';
+    case 'shipped': return 'bg-blue-100 text-blue-800';
+    case 'completed': return 'bg-green-100 text-green-800';
+    case 'refunded': return 'bg-red-100 text-red-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
 
     async function updateStatus(transactionId, newStatus) {
       try {
@@ -588,6 +606,36 @@ function updateTransactionTable(transactions) {
     })
     .catch(() => alert('Error reporting the issue.'));
   }
+
+let transactionToCancel = null;
+
+function promptCancelTransaction(id) {
+  transactionToCancel = id;
+  showModal('cancelConfirmModal');
+}
+
+document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+  if (!transactionToCancel) return;
+
+  fetch(`/api/transactions/${transactionToCancel}/cancel`, {
+    method: 'POST'
+  })
+    .then(res => res.json())
+    .then(data => {
+      hideModal('cancelConfirmModal');
+      transactionToCancel = null;
+
+      if (data.success) {
+        loadTransactions(); // Refresh table
+      } else {
+        alert(data.message || 'Failed to cancel transaction.');
+      }
+    })
+    .catch(() => {
+      hideModal('cancelConfirmModal');
+      alert('An error occurred while cancelling.');
+    });
+});
 
 
 

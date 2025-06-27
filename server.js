@@ -1971,7 +1971,7 @@ app.put('/api/transactions/:id/status', (req, res) => {
     db.query(updateStatus, [newStatus, transactionId], (err2) => {
       if (err2) return res.status(500).json({ message: 'Failed to update status.' });
 
-      // Only pay the seller if it's wallet and buyer completed
+      // Only pay the seller if payment method is wallet and buyer marked as completed
       if (tx.payment_method === 'wallet' && newStatus === 'Completed') {
         const ensureWallet = `
           INSERT INTO wallets (user_id, balance)
@@ -2000,6 +2000,7 @@ app.put('/api/transactions/:id/status', (req, res) => {
     });
   });
 });
+
 
 
 setInterval(() => {
@@ -2265,6 +2266,62 @@ app.post('/api/admin/disputes/:id/complete', (req, res) => {
   });
 });
 
+app.post('/api/transactions/:id/cancel', (req, res) => {
+  const userId = req.session.user?.id;
+  const transactionId = req.params.id;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const getTransaction = 'SELECT * FROM transactions WHERE id = ?';
+  db.query(getTransaction, [transactionId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Transaction not found' });
+
+    const tx = results[0];
+    if (tx.status !== 'Pending') {
+      return res.status(400).json({ success: false, message: 'Only pending transactions can be cancelled.' });
+    }
+
+    if (tx.buyer_id !== userId) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to cancel this transaction.' });
+    }
+
+    // Step 1: Cancel the transaction
+    const cancelQuery = `
+      UPDATE transactions
+      SET status = 'Cancelled', updated_at = NOW()
+      WHERE id = ?
+    `;
+    db.query(cancelQuery, [transactionId], (err2) => {
+      if (err2) return res.status(500).json({ success: false, message: 'Failed to cancel transaction.' });
+
+      // Step 2: Reactivate the listing
+      const listingQuery = `UPDATE listings SET status = 'Active' WHERE item_id = ?`;
+      db.query(listingQuery, [tx.item_id], (err3) => {
+        if (err3) {
+          console.error('Failed to reactivate listing:', err3);
+          return res.status(500).json({ success: false, message: 'Transaction cancelled, but failed to update listing.' });
+        }
+
+        // Step 3 (if wallet): Refund buyer
+        if (tx.payment_method === 'wallet') {
+          const refundQuery = `UPDATE wallets SET balance = balance + ? WHERE user_id = ?`;
+          db.query(refundQuery, [tx.price, userId], (err4) => {
+            if (err4) {
+              console.error('Failed to refund wallet:', err4);
+              return res.status(500).json({ success: false, message: 'Cancelled, but failed to refund wallet.' });
+            }
+            return res.json({ success: true, message: 'Transaction cancelled, listing reactivated, and wallet refunded.' });
+          });
+        } else {
+          return res.json({ success: true, message: 'Transaction cancelled and listing reactivated.' });
+        }
+      });
+    });
+  });
+});
 
 
 // Start server
