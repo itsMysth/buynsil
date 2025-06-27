@@ -1973,14 +1973,26 @@ app.put('/api/transactions/:id/status', (req, res) => {
 
       // Only pay the seller if it's wallet and buyer completed
       if (tx.payment_method === 'wallet' && newStatus === 'Completed') {
-        const updateSellerWallet = `
-          UPDATE wallets SET balance = balance + ? WHERE user_id = ?
+        const ensureWallet = `
+          INSERT INTO wallets (user_id, balance)
+          VALUES (?, 0)
+          ON DUPLICATE KEY UPDATE balance = balance
         `;
-        db.query(updateSellerWallet, [tx.price, tx.seller_id], (err3) => {
-          if (err3) {
-            return res.status(500).json({ message: 'Status updated, but failed to credit seller.' });
+
+        db.query(ensureWallet, [tx.seller_id], (err4) => {
+          if (err4) {
+            return res.status(500).json({ message: 'Status updated, but failed to initialize seller wallet.' });
           }
-          return res.json({ success: true, message: 'Transaction completed and seller credited.', status: newStatus });
+
+          const updateSellerWallet = `
+            UPDATE wallets SET balance = balance + ? WHERE user_id = ?
+          `;
+          db.query(updateSellerWallet, [tx.price, tx.seller_id], (err3) => {
+            if (err3) {
+              return res.status(500).json({ message: 'Status updated, but failed to credit seller.' });
+            }
+            return res.json({ success: true, message: 'Transaction completed and seller credited.', status: newStatus });
+          });
         });
       } else {
         return res.json({ success: true, message: 'Transaction status updated.', status: newStatus });
@@ -1988,6 +2000,7 @@ app.put('/api/transactions/:id/status', (req, res) => {
     });
   });
 });
+
 
 setInterval(() => {
   const now = new Date();
