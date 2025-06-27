@@ -343,30 +343,105 @@
             </div>
         </div>
 
-
-        <div id="paymentMethodModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
-                <h2 class="text-lg font-semibold mb-4">Select Payment Method</h2>
-
-                <div class="flex flex-col space-y-3 mb-6">
-                <label class="flex items-center space-x-2">
-                    <input type="radio" name="payment-method" value="wallet" class="text-primary-600" checked>
-                    <span>Wallet</span>
-                </label>
-                <label class="flex items-center space-x-2">
-                    <input type="radio" name="payment-method" value="cod" class="text-primary-600">
-                    <span>Cash on Delivery</span>
-                </label>
+        <div id="checkoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <form id="checkoutForm" class="bg-white rounded-xl shadow-lg w-full max-w-2xl relative overflow-hidden">
+                
+                <!-- Gradient Header -->
+                <div class="bg-gradient-to-b from-[#7b9aff] to-gray-100 px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-semibold text-gray-800">Checkout</h2>
+                <button type="button" onclick="hideModal('checkoutModal')" class="text-2xl text-gray-600 hover:text-gray-800" id="closeCheckout">&times;</button>
                 </div>
 
-                <div class="flex justify-end space-x-3">
-                <button onclick="hideModal('paymentMethodModal')" class="text-sm text-gray-600 hover:underline">Cancel</button>
-                <button onclick="confirmPaymentChoice()" class="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md">
-                    Confirm
+                <!-- Body -->
+                <div class="space-y-6 max-h-[75vh] overflow-y-auto p-6">
+
+                <!-- Items -->
+                <div id="items-container"></div>
+
+                <!-- Contact Info -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900">Contact Information</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" class="w-full mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md" readonly>
+                    </div>
+                    <div>
+                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input
+                        type="text"
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                        placeholder="09123456789"
+                        inputmode="numeric"
+                        maxlength="11"
+                        pattern="09[0-9]{9}"
+                        required>
+                        <div id="phoneError" class="text-sm text-red-600 mt-1 hidden">
+                        Please enter a valid phone number (e.g. 09123456789)
+                        </div>
+                    </div>
+                    </div>
+                    <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="email" name="email" class="w-full mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md" readonly>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Delivery Address</h3>
+                    <textarea id="deliveryAddress" name="deliveryAddress" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[80px]" placeholder="Enter your complete delivery address (street, barangay, city, province)" required></textarea>
+                    <div id="addressError" class="text-sm text-red-600 mt-1 hidden">Please enter your delivery address</div>
+                    <button type="button" id="useProfileAddress" class="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                    onclick="fetch('/api/get-user-address')
+                        .then(res => res.json())
+                        .then(data => {
+                        if (data.success && data.address) {
+                            document.getElementById('deliveryAddress').value = data.address;
+                        } else {
+                            showModal('noAddressModal');
+                        }
+                        })
+                        .catch(() => showModal('noAddressModal'))">
+                    Use my profile address
+                    </button>
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Payment Method</h3>
+                    <div class="space-y-2">
+                    <label class="flex items-center gap-2"><input type="radio" name="payment" value="cod" class="accent-blue-500 scale-110" checked> Cash on Delivery</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="payment" value="wallet" class="accent-blue-500 scale-110"> Wallet</label>
+                    </div>
+                </div>
+
+                <!-- Total + Confirm -->
+                <div class="flex justify-between items-center text-lg font-semibold border-t pt-4">
+                    <span>Total</span>
+                    <span id="total-amount">₱0.00</span>
+                </div>
+                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
+                    Confirm Checkout
                 </button>
                 </div>
+            </form>
+        </div>
+
+        <div id="noAddressModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4">No Address Found</h2>
+                <p class="mb-6">
+                We couldn't find your saved address. Please update your profile information first.
+                </p>
+                <button onclick="hideModal('noAddressModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
+                Close
+                </button>
             </div>
         </div>
+
 
         <div id="insufficientFundsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
             <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
@@ -376,9 +451,21 @@
                 <button onclick="hideModal('insufficientFundsModal')" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm">
                     Cancel
                 </button>
-                <button onclick="showModal('addFundsModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm">
+                <button onclick="window.location.href='/profile'" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm">
                     Add Funds
                 </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="checkoutSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+                <h2 class="text-lg font-semibold mb-4 text-green-600">Checkout Successful</h2>
+                <p class="mb-6">Your order has been placed successfully. You will be notified once it's processed.</p>
+                <div class="flex justify-center">
+                    <button onclick="handleCheckoutSuccessClose()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm">
+                    Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -488,7 +575,7 @@
                     <h3 class="font-semibold text-lg mb-1">${item.item_name}</h3>
                     <p class="text-gray-600 truncate text-sm mb-2">${item.category || 'General'}${item.seccategory ? ' > ' + item.seccategory : ''}</p>
                     <div class="mt-auto flex justify-between items-center">
-                        <span class="font-bold text-primary-600">$${item.price}</span>
+                        <span class="font-bold text-primary-600">₱${item.price}</span>
                         <button class="view-btn text-sm bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded-full" data-id="${item.item_id}">
                             View
                         </button>
@@ -601,18 +688,24 @@
         });
 
         modal.querySelector('.buy-now').addEventListener('click', () => {
-            showModal('buyConfirmModal');
+        showModal('buyConfirmModal');
 
-            const confirmBtn = document.getElementById('confirmBuyBtn');
-            confirmBtn.onclick = () => {
+        const confirmBtn = document.getElementById('confirmBuyBtn');
+        confirmBtn.onclick = () => {
             // Set selected values
             selectedItemId = item.item_id;
             selectedSellerId = item.seller_id;
             selectedPrice = item.price;
 
             hideModal('buyConfirmModal');
-            showModal('paymentMethodModal');
-            };
+
+            // Fill in checkout modal fields
+            document.getElementById('fullName').value = item.buyer_name || 'Your Name'; // Replace with session user if needed
+            document.getElementById('email').value = item.buyer_email || 'your@email.com';
+            document.getElementById('total-amount').textContent = `₱${item.price}`;
+
+            showModal('checkoutModal');
+        };
         });
         }
 
@@ -763,76 +856,100 @@
                 dot.classList.add('hidden');
                 }
             });
-        
 
-async function confirmPaymentChoice() {
-if (!selectedItemId || !selectedSellerId || !selectedPrice) {
-  console.error('Missing item or seller data', {
-    selectedItemId,
-    selectedSellerId,
-    selectedPrice
-  });
-  return;
-}
+        document.getElementById('checkoutForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
 
+        const phone = document.getElementById('phoneNumber').value.trim();
+        const address = document.getElementById('deliveryAddress').value.trim();
+        const payment = document.querySelector('input[name="payment"]:checked')?.value;
 
-const method = document.querySelector('input[name="payment-method"]:checked')?.value;
-  if (!method) {
-    alert('Please select a payment method.');
-    return;
-  }
+        if (!/^09\d{9}$/.test(phone)) {
+            document.getElementById('phoneError').classList.remove('hidden');
+            return;
+        } else {
+            document.getElementById('phoneError').classList.add('hidden');
+        }
 
-  if (method === 'wallet') {
-    try {
-      const res = await fetch('/api/wallet/balance');
-      const data = await res.json();
+        if (!address) {
+            document.getElementById('addressError').classList.remove('hidden');
+            return;
+        } else {
+            document.getElementById('addressError').classList.add('hidden');
+        }
 
-      if (!data.success || data.balance === undefined) {
-        throw new Error('Could not retrieve balance');
-      }
+        // ✅ Fetch wallet balance dynamically before checking
+        let walletBalance = 0;
+        if (payment === 'wallet') {
+            try {
+            const res = await fetch('/api/wallet/balance');
+            const data = await res.json();
 
-      if (data.balance < selectedPrice) {
-        hideModal('paymentMethodModal');
-        showModal('insufficientFundsModal');
-        return;
-      }
-    } catch (err) {
-      console.error('Wallet check error:', err);
-      alert('Error checking wallet balance.');
-      return;
-    }
-  }
+            if (data.success) {
+                walletBalance = parseFloat(data.balance);
+                if (walletBalance < selectedPrice) {
+                showModal('insufficientFundsModal');
+                return;
+                }
+            } else {
+                alert('Could not verify wallet balance.');
+                return;
+            }
+            } catch (err) {
+            console.error('Wallet fetch error:', err);
+            alert('Failed to check wallet balance.');
+            return;
+            }
+        }
 
-  // Proceed with purchase
-  try {
-    const res = await fetch('/api/purchase', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        itemId: selectedItemId,
-        sellerId: selectedSellerId,
-        price: selectedPrice,
-        method,
-      }),
-    });
+        const payload = {
+            phone,
+            address,
+            payment,
+            item_id: selectedItemId,
+            seller_id: selectedSellerId,
+            price: selectedPrice
+        };
 
-    const result = await res.json();
-    hideModal('paymentMethodModal');
+        try {
+            const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+            });
 
-    if (result.success) {
-      alert('Purchase successful!');
-      location.reload(); // or reload item list
-    } else {
-      alert(result.message || 'Purchase failed.');
-    }
-  } catch (err) {
-    console.error('Purchase error:', err);
-    alert('Something went wrong during purchase.');
-  }
-}
+            const result = await res.json();
 
+            if (result.success) {
+            showModal('checkoutSuccessModal');
+            hideModal('checkoutModal');
+            } else {
+            alert(result.message || 'Checkout failed.');
+            }
+        } catch (err) {
+            console.error('Checkout error:', err);
+            alert('An error occurred during checkout.');
+        }
+        });
+
+        const phoneInput = document.getElementById('phoneNumber');
+        const phoneError = document.getElementById('phoneError');
+
+        // Allow only digits during typing
+        phoneInput.addEventListener('input', () => {
+        phoneInput.value = phoneInput.value.replace(/\D/g, ''); // Remove all non-digit characters
+        });
+
+        function handleCheckoutSuccessClose() {
+            // Hide all modals
+            document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+
+            // Reload the listings
+            loadFilteredProducts();
+            updateSavedHearts();
+        }
 
 
     </script>

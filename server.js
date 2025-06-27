@@ -71,6 +71,10 @@ app.get('/admin/users', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'Admin_users.html'));
 });
 
+app.get('/admin/disputes', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'Admin_dispute.html'));
+});
+
 app.get('/addlisting', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'addlisting.html'));
 });
@@ -110,6 +114,7 @@ app.get('/saveditems', ensureAuthenticated, (req, res) => {
 app.get('/profile', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'profile.html'));
 });
+
 
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
@@ -374,14 +379,21 @@ app.get('/api/products', (req, res) => {
     const { search, category, subcategory, sort } = req.query;
     const currentUserId = req.session.user.id;
 
-
     let query = `
-        SELECT listings.*, users.name AS seller_name 
-        FROM listings 
-        JOIN users ON listings.seller_id = users.id 
-        WHERE listings.status != 'Sold' AND listings.status != 'Banned' AND listings.seller_id != ?
+        SELECT 
+            listings.*, 
+            seller.name AS seller_name, 
+            buyer.name AS buyer_name, 
+            buyer.email AS buyer_email
+        FROM listings
+        JOIN users AS seller ON listings.seller_id = seller.id
+        JOIN users AS buyer ON buyer.id = ?
+        WHERE listings.status != 'Sold' 
+          AND listings.status != 'Banned' 
+          AND listings.seller_id != ?
     `;
-    const params = [currentUserId];
+
+    const params = [currentUserId, currentUserId];
 
     if (search) {
         query += ` AND listings.item_name LIKE ?`;
@@ -430,6 +442,7 @@ app.get('/api/products', (req, res) => {
         res.json(results);
     });
 });
+
 
 app.get('/api/seller/:id', (req, res) => {
   const userId = req.params.id;
@@ -677,14 +690,13 @@ app.post('/api/change-password', async (req, res) => {
 });
 
 app.post('/api/update-address', (req, res) => {
-  const { city, state } = req.body;
-  const userId = req.session.user.id;
+  const { city, state, fullAddress } = req.body;
+  const userId = req.session.user?.id;
 
   if (!userId) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  // Check if userinfo exists for this user
   const checkSql = 'SELECT * FROM userinfo WHERE userId = ?';
   db.query(checkSql, [userId], (err, results) => {
     if (err) {
@@ -693,12 +705,12 @@ app.post('/api/update-address', (req, res) => {
     }
 
     if (results.length > 0) {
-      // User info exists, perform UPDATE
+      // Update existing record
       const updateSql = `
         UPDATE userinfo 
-        SET city = ?, province = ?
+        SET city = ?, province = ?, full_address = ?
         WHERE userId = ?`;
-      db.query(updateSql, [city, state, userId], (err) => {
+      db.query(updateSql, [city, state, fullAddress, userId], (err) => {
         if (err) {
           console.error('Update error:', err);
           return res.status(500).json({ message: 'Failed to update address' });
@@ -706,11 +718,11 @@ app.post('/api/update-address', (req, res) => {
         return res.json({ message: 'Address updated successfully' });
       });
     } else {
-      // No user info, perform INSERT
+      // Insert new record
       const insertSql = `
-        INSERT INTO userinfo (userId, city, province)
-        VALUES (?, ?, ?)`;
-      db.query(insertSql, [userId, city, state], (err) => {
+        INSERT INTO userinfo (userId, city, province, full_address)
+        VALUES (?, ?, ?, ?)`;
+      db.query(insertSql, [userId, city, state, fullAddress], (err) => {
         if (err) {
           console.error('Insert error:', err);
           return res.status(500).json({ message: 'Failed to save address' });
@@ -720,6 +732,7 @@ app.post('/api/update-address', (req, res) => {
     }
   });
 });
+
 
 app.get('/api/seller/:id', (req, res) => {
   const userId = req.params.id;
@@ -1083,14 +1096,33 @@ app.get('/api/admin/stats', (req, res) => {
             }
             stats.resolvedToday = result[0].resolvedToday;
 
-            // Final response
-            res.json(stats);
+            // Query 6: Disputed Transactions
+            db.query("SELECT COUNT(*) AS disputedTransactions FROM transactions WHERE status = 'Disputed'", (err, result) => {
+              if (err) {
+                console.error('Error fetching disputed transactions:', err);
+                return res.status(500).json({ error: 'Error fetching disputed transactions' });
+              }
+              stats.disputedTransactions = result[0].disputedTransactions;
+
+              // Query 7: Disputes Today
+              db.query("SELECT COUNT(*) AS disputesToday FROM transactions WHERE status = 'Disputed' AND DATE(disputed_at) = CURDATE()", (err, result) => {
+                if (err) {
+                  console.error('Error fetching disputes today:', err);
+                  return res.status(500).json({ error: 'Error fetching disputes today' });
+                }
+                stats.disputesToday = result[0].disputesToday;
+
+                // Final response
+                res.json(stats);
+              });
+            });
           });
         });
       });
     });
   });
 });
+
 
 app.get('/api/admin/users/recent', (req, res) => {
   const sql = `
@@ -1735,65 +1767,490 @@ app.get('/api/wallet/balance', (req, res) => {
   });
 });
 
-app.post('/api/purchase', async (req, res) => {
-  const buyerId = req.session.user?.id;
-  const { itemId, sellerId, price, method } = req.body;
+app.get('/api/get-user-address', (req, res) => {
+  const userId = req.session.user.id;
+  const query = 'SELECT full_address FROM userinfo WHERE userId = ?';
 
-  if (!buyerId || !itemId || !sellerId || !price || !method) {
-    return res.status(400).json({ success: false, message: 'Missing data' });
+  db.query(query, [userId], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Server error' });
+    if (results.length === 0) return res.json({ success: true, address: null });
+
+    res.json({ success: true, address: results[0].full_address });
+  });
+});
+
+app.post('/api/update-contact', (req, res) => {
+  const userId = req.session.user.id;
+  const { contact_number } = req.body;
+
+  if (!/^09\d{9}$/.test(contact_number)) {
+    return res.status(400).json({ success: false, message: 'Invalid phone number format' });
   }
 
-  try {
-    if (method === 'wallet') {
-      // Check wallet balance
-      const [walletRows] = await db.promise().query(
-        'SELECT balance FROM wallets WHERE user_id = ?',
-        [buyerId]
-      );
-      const balance = walletRows[0]?.balance ?? 0;
+  const query = `
+    INSERT INTO userinfo (userId, contact_number)
+    VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE contact_number = VALUES(contact_number)
+  `;
 
-      if (balance < price) {
-        return res.status(400).json({ success: false, message: 'Insufficient funds' });
+  db.query(query, [userId, contact_number], (err, result) => {
+    if (err) {
+      console.error('Error updating contact number:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+    res.json({ success: true, message: 'Contact number updated successfully' });
+  });
+});
+
+app.post('/api/checkout', (req, res) => {
+  const buyerId = req.session.user?.id;
+  const { phone, address, payment, item_id, seller_id, price } = req.body;
+
+  if (!buyerId || !item_id || !seller_id || !price || !payment) {
+    return res.status(400).json({ success: false, message: 'Missing required fields.' });
+  }
+
+  // Wallet payment logic
+  if (payment === 'wallet') {
+    const getWallet = 'SELECT balance FROM wallets WHERE user_id = ?';
+    db.query(getWallet, [buyerId], (err, results) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error.' });
+      if (results.length === 0) return res.status(400).json({ success: false, message: 'Wallet not found.' });
+
+      const currentBalance = parseFloat(results[0].balance);
+      if (currentBalance < price) {
+        return res.status(400).json({ success: false, message: 'Insufficient wallet balance.' });
       }
 
-      // Deduct from buyer
-      await db.promise().query(
-        'UPDATE wallets SET balance = balance - ? WHERE user_id = ?',
-        [price, buyerId]
-      );
+      const newBalance = currentBalance - price;
+      const updateWallet = 'UPDATE wallets SET balance = ? WHERE user_id = ?';
 
-      // Ensure seller wallet exists, then credit it
-      await db.promise().query(
-        'INSERT IGNORE INTO wallets (user_id, balance) VALUES (?, 0)',
-        [sellerId]
-      );
-      await db.promise().query(
-        'UPDATE wallets SET balance = balance + ? WHERE user_id = ?',
-        [price, sellerId]
-      );
-    }
+      db.query(updateWallet, [newBalance, buyerId], (err) => {
+        if (err) return res.status(500).json({ success: false, message: 'Failed to deduct from buyer wallet.' });
+        insertTransaction(); // Do NOT credit seller yet
+      });
+    });
+  } else {
+    insertTransaction(); // COD
+  }
 
-    // Mark the item as sold
-    await db.promise().query(
-      'UPDATE listings SET status = ? WHERE item_id = ?',
-      ['Sold', itemId]
-    );
+  function insertTransaction() {
+    const now = new Date();
+    const insert = `
+      INSERT INTO transactions (buyer_id, seller_id, item_id, price, status, payment_method, created_at, updated_at)
+      VALUES (?, ?, ?, ?, 'Pending', ?, ?, ?)
+    `;
+    db.query(insert, [buyerId, seller_id, item_id, price, payment, now, now], (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Checkout failed.' });
 
-    // Record the transaction (without quantity)
-    await db.promise().query(
-      `INSERT INTO transactions 
-        (buyer_id, seller_id, item_id, price, status, payment_method, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [buyerId, sellerId, itemId, price, 'Completed', method]
-    );
-
-    res.status(200).json({ success: true, message: 'Purchase successful.' });
-  } catch (err) {
-    console.error('[Purchase Error]', err);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+      const markSold = 'UPDATE listings SET status = ? WHERE item_id = ?';
+      db.query(markSold, ['Sold', item_id], () => {
+        return res.json({ success: true, message: 'Checkout successful. Seller will be paid once order is completed.' });
+      });
+    });
   }
 });
 
+app.get('/api/transactions', (req, res) => {
+  const userId = req.session.user?.id;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const { page = 1, perPage = 10, search = '', status = '', sort = 'newest' } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(perPage);
+
+  let whereClauses = ['(t.buyer_id = ? OR t.seller_id = ?)'];
+  let params = [userId, userId];
+
+  // Search
+  if (search) {
+    whereClauses.push(`
+      (bu.name LIKE ? OR se.name LIKE ? OR i.item_name LIKE ?)
+    `);
+    const likeSearch = `%${search}%`;
+    params.push(likeSearch, likeSearch, likeSearch);
+  }
+
+  // Status filter
+  if (status && status !== 'all') {
+    whereClauses.push('t.status = ?');
+    params.push(status);
+  }
+
+  const where = `WHERE ${whereClauses.join(' AND ')}`;
+
+  // Sorting
+  let orderBy = 't.created_at DESC';
+  if (sort === 'oldest') orderBy = 't.created_at ASC';
+  else if (sort === 'highest') orderBy = 't.price DESC';
+  else if (sort === 'lowest') orderBy = 't.price ASC';
+
+  const countQuery = `
+    SELECT COUNT(*) AS total
+    FROM transactions t
+    JOIN users bu ON t.buyer_id = bu.id
+    JOIN users se ON t.seller_id = se.id
+    JOIN listings i ON t.item_id = i.item_id
+    ${where}
+  `;
+
+  db.query(countQuery, params, (err, countResults) => {
+    if (err) return res.status(500).json({ message: 'Server error', error: err });
+
+    const total = countResults[0].total;
+
+    const dataQuery = `
+      SELECT
+        t.*,
+        bu.name AS buyer_name,
+        se.name AS seller_name,
+        i.item_name,
+        i.image AS item_image
+      FROM transactions t
+      JOIN users bu ON t.buyer_id = bu.id
+      JOIN users se ON t.seller_id = se.id
+      JOIN listings i ON t.item_id = i.item_id
+      ${where}
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?
+    `;
+
+    db.query(dataQuery, [...params, parseInt(perPage), offset], (err, dataResults) => {
+      if (err) return res.status(500).json({ message: 'Server error', error: err });
+
+      const transactions = dataResults.map(row => ({
+        ...row,
+        item_image: row.item_image?.split(',')[0]?.trim() || '/uploads/default-item.png'
+      }));
+
+      res.json({
+        transactions,
+        total,
+        perPage: parseInt(perPage),
+        currentPage: parseInt(page)
+      });
+    });
+  });
+});
+
+app.put('/api/transactions/:id/status', (req, res) => {
+  const userId = req.session.user?.id;
+  const transactionId = req.params.id;
+  const { newStatus } = req.body;
+
+  if (!userId || !transactionId || !newStatus) {
+    return res.status(400).json({ message: 'Missing required data.' });
+  }
+
+  const getTransaction = `SELECT * FROM transactions WHERE id = ?`;
+
+  db.query(getTransaction, [transactionId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ message: 'Transaction not found.' });
+
+    const tx = results[0];
+    const isSeller = tx.seller_id === userId;
+    const isBuyer = tx.buyer_id === userId;
+
+    if (['Completed', 'Refunded'].includes(tx.status)) {
+      return res.status(400).json({ message: 'Cannot update completed or refunded transactions.' });
+    }
+
+    let allowed = false;
+    if (tx.status === 'Pending' && newStatus === 'Shipped' && isSeller) {
+      allowed = true;
+    } else if (tx.status === 'Shipped' && newStatus === 'Completed' && isBuyer) {
+      allowed = true;
+    }
+
+    if (!allowed) {
+      return res.status(403).json({ message: 'You are not authorized to perform this action.' });
+    }
+
+    const updateStatus = `UPDATE transactions SET status = ?, updated_at = NOW() WHERE id = ?`;
+
+    db.query(updateStatus, [newStatus, transactionId], (err2) => {
+      if (err2) return res.status(500).json({ message: 'Failed to update status.' });
+
+      // Only pay the seller if it's wallet and buyer completed
+      if (tx.payment_method === 'wallet' && newStatus === 'Completed') {
+        const updateSellerWallet = `
+          UPDATE wallets SET balance = balance + ? WHERE user_id = ?
+        `;
+        db.query(updateSellerWallet, [tx.price, tx.seller_id], (err3) => {
+          if (err3) {
+            return res.status(500).json({ message: 'Status updated, but failed to credit seller.' });
+          }
+          return res.json({ success: true, message: 'Transaction completed and seller credited.', status: newStatus });
+        });
+      } else {
+        return res.json({ success: true, message: 'Transaction status updated.', status: newStatus });
+      }
+    });
+  });
+});
+
+setInterval(() => {
+  const now = new Date();
+  const warningCutoff = new Date(now.getTime() - 1 * 60 * 1000);     // 1 minute ago
+  const completeCutoff = new Date(now.getTime() - 60 * 60 * 1000);   // 1 hour ago // 2 minutes ago
+
+  // Send warnings
+  const warnQuery = `
+    SELECT t.id, t.buyer_id, u.email, i.item_name
+    FROM transactions t
+    JOIN users u ON t.buyer_id = u.id
+    JOIN listings i ON t.item_id = i.item_id
+    WHERE t.status = 'Shipped' AND t.updated_at < ? AND (t.warned IS NULL OR t.warned = 0)
+  `;
+
+  db.query(warnQuery, [warningCutoff], (err, results) => {
+    if (err) return console.error('Email warning query error:', err);
+
+    results.forEach(tx => {
+      const mailOptions = {
+        from: `"Baynsil" <${process.env.GMAIL_USER}>`,
+        to: tx.email,
+        subject: 'Reminder: Complete Your Order',
+        text: `You have a shipped order for \"${tx.item_name}\". Please mark it as completed or it will be auto-completed.`
+      };
+
+      transporter.sendMail(mailOptions, (err) => {
+        if (err) return console.error('Failed to send warning email:', err);
+
+        db.query('UPDATE transactions SET warned = 1 WHERE id = ?', [tx.id]);
+        console.log(`Warning email sent for transaction ${tx.id}`);
+      });
+    });
+  });
+
+  // Auto-complete
+  const completeQuery = `
+    SELECT * FROM transactions
+    WHERE status = 'Shipped' AND updated_at < ? AND warned = 1
+  `;
+
+  db.query(completeQuery, [completeCutoff], (err, results) => {
+    if (err) return console.error('Auto-complete query error:', err);
+
+    results.forEach(tx => {
+      db.query('UPDATE transactions SET status = ?, updated_at = NOW() WHERE id = ?', ['Completed', tx.id], (err2) => {
+        if (err2) return console.error(`Failed to complete transaction ${tx.id}:`, err2);
+
+        if (tx.payment_method === 'wallet') {
+          db.query('UPDATE wallets SET balance = balance + ? WHERE user_id = ?', [tx.price, tx.seller_id], (err3) => {
+            if (err3) return console.error(`Failed to credit seller for transaction ${tx.id}:`, err3);
+            console.log(`Transaction ${tx.id} auto-completed and seller paid.`);
+          });
+        } else {
+          console.log(`Transaction ${tx.id} auto-completed.`);
+        }
+      });
+    });
+  });
+}, 60 * 1000);
+
+app.post('/api/transactions/:id/report', (req, res) => {
+  const userId = req.session.user?.id;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  const txId = req.params.id;
+  const reason = req.body.reason?.trim();
+
+  if (!reason) return res.status(400).json({ message: 'Reason is required.' });
+
+  const checkQuery = 'SELECT buyer_id, status FROM transactions WHERE id = ?';
+  db.query(checkQuery, [txId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error', error: err });
+    if (results.length === 0) return res.status(404).json({ message: 'Transaction not found' });
+
+    const transaction = results[0];
+    if (transaction.buyer_id !== userId) return res.status(403).json({ message: 'Forbidden' });
+
+    if (transaction.status !== 'Shipped') {
+      return res.status(400).json({ message: 'Only shipped transactions can be reported.' });
+    }
+
+    const updateQuery = `
+      UPDATE transactions
+      SET status = 'Disputed', disputed_at = NOW(), dispute_reason = ?, updated_at = NOW()
+      WHERE id = ?
+    `;
+    db.query(updateQuery, [reason, txId], (err2) => {
+      if (err2) return res.status(500).json({ message: 'Failed to update transaction', error: err2 });
+      res.json({ success: true });
+    });
+  });
+});
+
+// GET: Fetch all disputes
+app.get('/api/admin/disputes', (req, res) => {
+  const { status, buyer, seller } = req.query;
+  let conditions = ['t.disputed_at IS NOT NULL'];
+  let values = [];
+
+  if (status && status !== 'all') {
+    conditions.push('t.status = ?');
+    values.push(status);
+  }
+
+  if (buyer) {
+    conditions.push('bu.name LIKE ?');
+    values.push(`%${buyer}%`);
+  }
+
+  if (seller) {
+    conditions.push('su.name LIKE ?');
+    values.push(`%${seller}%`);
+  }
+
+  const whereClause = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+  const query = `
+    SELECT 
+      t.id, t.status, t.dispute_reason, t.disputed_at,
+      bu.id AS buyerId, bu.name AS buyerName, bu.profilepic AS buyerProfilePic,
+      su.id AS sellerId, su.name AS sellerName, su.profilepic AS sellerProfilePic
+    FROM transactions t
+    JOIN users bu ON t.buyer_id = bu.id
+    JOIN users su ON t.seller_id = su.id
+    ${whereClause}
+    ORDER BY t.disputed_at DESC
+  `;
+
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Error fetching disputes:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    const formatted = results.map(d => ({
+      id: d.id,
+      status: d.status,
+      reason: d.dispute_reason,
+      date: d.disputed_at,
+      resolved: ['refunded', 'completed'].includes(d.status.toLowerCase()),
+      buyer: {
+        id: d.buyerId,
+        name: d.buyerName,
+        profilePic: d.buyerProfilePic
+      },
+      seller: {
+        id: d.sellerId,
+        name: d.sellerName,
+        profilePic: d.sellerProfilePic
+      }
+    }));
+
+    res.json(formatted);
+  });
+});
+
+app.post('/api/admin/disputes/:id/refund', (req, res) => {
+  const disputeId = req.params.id;
+
+  const getTransactionQuery = 'SELECT * FROM transactions WHERE id = ?';
+  db.query(getTransactionQuery, [disputeId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Transaction not found.' });
+    }
+
+    const transaction = results[0];
+    const buyerId = transaction.buyer_id;
+    const refundAmount = transaction.price;
+    const itemId = transaction.item_id;
+
+    // Step 1: Refund the buyer
+    const refundQuery = 'UPDATE wallets SET balance = balance + ? WHERE user_id = ?';
+    db.query(refundQuery, [refundAmount, buyerId], (err) => {
+      if (err) {
+        console.error('Error refunding wallet:', err);
+        return res.status(500).json({ success: false, message: 'Failed to refund wallet.' });
+      }
+
+      // Step 2: Mark transaction as refunded and resolved
+      const updateTransactionQuery = `
+        UPDATE transactions
+        SET status = 'Refunded', resolved = 1
+        WHERE id = ?
+      `;
+      db.query(updateTransactionQuery, [disputeId], (err) => {
+        if (err) {
+          console.error('Error updating transaction:', err);
+          return res.status(500).json({ success: false, message: 'Failed to update transaction status.' });
+        }
+
+        // Step 3: Make the listing active again
+        const updateListingQuery = `
+          UPDATE listings
+          SET status = 'Active'
+          WHERE item_id = ?
+        `;
+        db.query(updateListingQuery, [itemId], (err) => {
+          if (err) {
+            console.error('Error updating listing status:', err);
+            return res.status(500).json({ success: false, message: 'Failed to update listing.' });
+          }
+
+          res.json({ success: true });
+        });
+      });
+    });
+  });
+});
+
+
+// POST: Complete transaction (pay seller)
+app.post('/api/admin/disputes/:id/complete', (req, res) => {
+  const disputeId = req.params.id;
+
+  const getTransactionQuery = 'SELECT * FROM transactions WHERE id = ?';
+  db.query(getTransactionQuery, [disputeId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Transaction not found.' });
+    }
+
+    const transaction = results[0];
+    const sellerId = transaction.seller_id;
+    const payoutAmount = transaction.price;
+
+    // Step 0: Ensure seller wallet exists
+    const ensureWalletQuery = `
+      INSERT INTO wallets (user_id, balance)
+      VALUES (?, 0)
+      ON DUPLICATE KEY UPDATE balance = balance
+    `;
+    db.query(ensureWalletQuery, [sellerId], (err) => {
+      if (err) {
+        console.error('Error ensuring seller wallet:', err);
+        return res.status(500).json({ success: false, message: 'Failed to ensure wallet.' });
+      }
+
+      // Step 1: Pay the seller
+      const payoutQuery = 'UPDATE wallets SET balance = balance + ? WHERE user_id = ?';
+      db.query(payoutQuery, [payoutAmount, sellerId], (err) => {
+        if (err) {
+          console.error('Error updating seller wallet:', err);
+          return res.status(500).json({ success: false, message: 'Failed to pay seller.' });
+        }
+
+        // Step 2: Mark transaction as completed
+        const updateTransactionQuery = `
+          UPDATE transactions
+          SET status = 'Completed', resolved = 1
+          WHERE id = ?
+        `;
+        db.query(updateTransactionQuery, [disputeId], (err) => {
+          if (err) {
+            console.error('Error updating transaction:', err);
+            return res.status(500).json({ success: false, message: 'Failed to update transaction status.' });
+          }
+
+          res.json({ success: true });
+        });
+      });
+    });
+  });
+});
 
 
 

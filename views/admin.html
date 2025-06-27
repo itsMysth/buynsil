@@ -76,7 +76,7 @@
     }
   </style>
 </head>
-<body class="text-gray-800 overflow-hidden">
+<body class="text-gray-800">
   <!-- Top Navigation Bar -->
   <header class="sticky top-0 z-10 bg-white shadow-sm">
     <div class="container px-4 py-3 flex items-center justify-between">
@@ -124,6 +124,14 @@
               <span class="font-medium">Reports</span>
             </a>
           </li>
+          <li>
+            <a href="/admin/disputes" class="nav-item flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0m0 0A9 9 0 0012 21a9 9 0 000-18zM12 9v2m0 4h.01" />
+              </svg>
+              <span class="font-medium">Disputes</span>
+            </a>
+          </li>
         </ul>
         
         <div class="mt-8 pt-4 border-t border-gray-200">
@@ -147,7 +155,8 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+
           <!-- Total Users Card -->
           <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-primary-600">
             <div class="flex items-center justify-between">
@@ -191,6 +200,22 @@
               <div class="bg-red-100 p-3 rounded-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disputed Transactions Card -->
+          <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-600">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Disputed Transactions</p>
+                <h3 id="disputedTransactions" class="text-2xl font-bold text-gray-900 mt-1">Loading...</h3>
+                <p class="text-sm text-gray-500 mt-2"><span id="disputesToday" class="text-yellow-600">0</span> reported today</p>
+              </div>
+              <div class="bg-yellow-100 p-3 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0m0 0A9 9 0 0012 21a9 9 0 000-18zM12 9v2m0 4h.01" />
                 </svg>
               </div>
             </div>
@@ -256,10 +281,15 @@
         document.getElementById('pendingReports').textContent = data.pendingReports;
         document.getElementById('resolvedReports').textContent = data.resolvedToday;
 
+        // 👇 New Dispute Stats
+        document.getElementById('disputedTransactions').textContent = data.disputedTransactions;
+        document.getElementById('disputesToday').textContent = data.disputesToday;
+
       } catch (error) {
         console.error('Error loading dashboard stats:', error);
       }
     }
+
 
     // Load recent users
     async function loadRecentUsers() {

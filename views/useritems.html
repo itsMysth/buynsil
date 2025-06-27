@@ -330,51 +330,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   // Load user's items from API
-async function loadUserItems() {
-  if (!currentUser) return;
+  async function loadUserItems() {
+    if (!currentUser) return;
 
-  const itemsContainer = document.getElementById('listings-container');
-  const emptyState = document.getElementById('empty-state');
-  const searchTerm = document.getElementById('searchInput')?.value.trim() || '';
+    const itemsContainer = document.getElementById('listings-container');
+    const emptyState = document.getElementById('empty-state');
+    const searchTerm = document.getElementById('searchInput')?.value.trim() || '';
 
-  try {
-    const params = new URLSearchParams({
-      userId: currentUser.id,
-      search: searchTerm
-    });
+    try {
+      const params = new URLSearchParams({
+        userId: currentUser.id,
+        search: searchTerm
+      });
 
-    const response = await fetch(`/api/user/items?${params.toString()}`);
-    const items = await response.json();
+      const response = await fetch(`/api/user/items?${params.toString()}`);
+      const items = await response.json();
 
-    document.getElementById('user-listings-count').textContent =
-      `You have ${items.length} ${items.length === 1 ? 'listing' : 'listings'}`;
+      document.getElementById('user-listings-count').textContent =
+        `You have ${items.length} ${items.length === 1 ? 'listing' : 'listings'}`;
 
-    if (items.length === 0) {
-      itemsContainer.classList.add('hidden');
-      emptyState.classList.remove('hidden');
-      return;
+      if (items.length === 0) {
+        itemsContainer.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      itemsContainer.classList.remove('hidden');
+      itemsContainer.innerHTML = '';
+
+      items.forEach(item => {
+        const itemElement = createItemElement(item);
+        itemsContainer.appendChild(itemElement);
+      });
+    } catch (error) {
+      console.error('Error loading user items:', error);
     }
-
-    emptyState.classList.add('hidden');
-    itemsContainer.classList.remove('hidden');
-    itemsContainer.innerHTML = '';
-
-    items.forEach(item => {
-      const itemElement = createItemElement(item);
-      itemsContainer.appendChild(itemElement);
-    });
-  } catch (error) {
-    console.error('Error loading user items:', error);
   }
-}
 
-  // Function to create an item element (same as before)
+    // Function to create an item element (same as before)
   function createItemElement(item) {
     const itemElement = document.createElement('div');
     itemElement.className = 'bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300';
 
     const isBanned = item.status.toLowerCase() === 'banned';
-    const showEdit = !isBanned;
+    const isSold = item.status.toLowerCase() === 'sold';
+    const showEdit = !isBanned && !isSold;
+    const showDelete = !isSold;
 
     itemElement.innerHTML = `
       <div class="bg-gray-100 h-48 flex items-center justify-center relative overflow-hidden">
@@ -388,19 +390,20 @@ async function loadUserItems() {
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
             </svg>
           </button>` : ''}
+          ${showDelete ? `
           <button class="delete-btn p-1 bg-white rounded-full shadow-md hover:bg-gray-100" data-id="${item.item_id}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
             </svg>
-          </button>
+          </button>` : ''}
         </div>
       </div>
       <div class="p-4">
         <h3 class="font-semibold text-lg mb-1">${item.item_name}</h3>
         <p class="text-gray-600 text-sm mb-2">${item.category || 'General'}${item.seccategory ? ' > ' + item.seccategory : ''}</p>
         <div class="flex justify-between items-center">
-          <span class="font-bold text-primary-600">$${item.price}</span>
-          <span class="text-xs ${item.status === 'Active' ? 'bg-green-100 text-green-800' : isBanned ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'} px-2 py-1 rounded-full">${item.status}</span>
+          <span class="font-bold text-primary-600">₱${item.price}</span>
+          <span class="text-xs ${item.status === 'Active' ? 'bg-green-100 text-green-800' : isBanned ? 'bg-red-100 text-red-800' : isSold ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'} px-2 py-1 rounded-full">${item.status}</span>
         </div>
         <button class="details-btn mt-3 text-sm text-primary-600 hover:text-primary-800 w-full text-left" data-id="${item.item_id}">
           ${isBanned ? 'See reason' : 'See more details →'}
@@ -408,9 +411,11 @@ async function loadUserItems() {
       </div>
     `;
 
-    itemElement.querySelector('.delete-btn').addEventListener('click', function () {
-      deleteItem(item.item_id);
-    });
+    if (showDelete) {
+      itemElement.querySelector('.delete-btn').addEventListener('click', function () {
+        deleteItem(item.item_id);
+      });
+    }
 
     if (showEdit) {
       itemElement.querySelector('.edit-btn').addEventListener('click', function () {
@@ -485,7 +490,7 @@ async function loadUserItems() {
           <div class="grid grid-cols-2 gap-4 mb-6">
             <div>
               <p class="text-sm text-gray-500">Price</p>
-              <p class="font-bold text-primary-600">$${item.price}</p>
+              <p class="font-bold text-primary-600">₱${item.price}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">Main Category</p>

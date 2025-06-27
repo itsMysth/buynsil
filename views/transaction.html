@@ -227,14 +227,15 @@
                 <select id="transaction-status-filter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                    <option value="refunded">Refunded</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="completed">Completed</option>
+                    <option value="disputed">Disputed</option>
                 </select>
                 <select id="transaction-sort-by" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md">
                     <option value="latest">Latest</option>
                     <option value="oldest">Oldest</option>
-                    <option value="amount-high">Amount (High to Low)</option>
-                    <option value="amount-low">Amount (Low to High)</option>
+                    <option value="highest">Amount (High to Low)</option>
+                    <option value="lowest">Amount (Low to High)</option>
                 </select>
                 </div>
             </div>
@@ -242,541 +243,354 @@
 
         <!-- Transactions Table -->
         <div class="bg-white shadow-sm rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="transactions-table-body" class="bg-white divide-y divide-gray-200">
-                <!-- Transactions will be loaded here -->
-                <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                    Loading transactions...
-                </td>
-                </tr>
-            </tbody>
-            </table>
+          <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Buyer</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seller</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="transactions-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Transactions will be loaded here -->
+                    <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        Loading transactions...
+                    </td>
+                    </tr>
+                </tbody>
+              </table>
+          </div>
+
+          <!-- Pagination (unchanged) -->
+          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                  <p class="text-sm text-gray-700" id="pagination-info">
+                  Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">0</span> results
+                  </p>
+              </div>
+              <div>
+                  <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <!-- same pagination code -->
+                  </nav>
+              </div>
+              </div>
+          </div>
         </div>
 
-        <!-- Pagination (unchanged) -->
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-                <p class="text-sm text-gray-700" id="pagination-info">
-                Showing <span class="font-medium">1</span> to <span class="font-medium">10</span> of <span class="font-medium">0</span> results
-                </p>
-            </div>
-            <div>
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <!-- same pagination code -->
-                </nav>
-            </div>
-            </div>
+        <div id="statusUpdatedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+            <h2 class="text-lg font-semibold mb-4">Status Updated</h2>
+            <p class="mb-6">
+              The transaction status has been successfully updated.
+            </p>
+            <button onclick="hideModal('statusUpdatedModal')" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none">
+              Close
+            </button>
+          </div>
         </div>
+
+        <div id="reportSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+            <h3 class="text-lg font-bold text-green-700 mb-2">Report Submitted</h3>
+            <p class="text-sm text-gray-600 mb-4">Your report has been successfully submitted and will be reviewed by our administrators.</p>
+            <button onclick="hideModal('reportSuccessModal')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+              OK
+            </button>
+          </div>
         </div>
+
+        <div id="reportProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+          <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold text-gray-900">Report Issue: Product Not Arrived</h3>
+              <button onclick="hideModal('reportProductModal')" class="text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="mb-4">
+              <p>Please confirm that the product has not arrived and provide a reason. Our administrators will review your report.</p>
+            </div>
+
+            <form onsubmit="submitProductReport(event)">
+              <input type="hidden" id="reportTransactionId" />
+              <div class="mb-4">
+                <label for="productReportReason" class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                <textarea id="productReportReason" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="e.g., It's been a long time and the seller hasn't responded..."></textarea>
+              </div>
+
+              <div class="flex justify-end space-x-3">
+                <button type="button" onclick="hideModal('reportProductModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                  Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
+                  Submit Report
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
 
       </div>
     </main>
   </div>
 
-  <!-- Ban User Modal -->
-  <div id="banUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Ban User</h3>
-        <button onclick="hideModal('banUserModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="mb-4">
-        <p>Are you sure you want to ban <span id="banUserName" class="font-semibold">User Name</span>?</p>
-        <p class="text-sm text-gray-500 mt-1">Banned users will not be able to log in or interact with the platform.</p>
-      </div>
-      
-      <div class="mb-4">
-        <label for="banReason" class="block text-sm font-medium text-gray-700 mb-1">Reason for Ban</label>
-        <textarea id="banReason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter reason for banning this user..."></textarea>
-      </div>
-      
-      <div class="flex justify-end space-x-3">
-        <button onclick="hideModal('banUserModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Cancel
-        </button>
-        <button onclick="confirmBanUser()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
-          Confirm Ban
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Unban User Modal -->
-  <div id="unbanUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Unban User</h3>
-        <button onclick="hideModal('unbanUserModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="mb-4">
-        <p>Are you sure you want to unban <span id="unbanUserName" class="font-semibold">User Name</span>?</p>
-        <p class="text-sm text-gray-500 mt-1">This user will regain full access to the platform.</p>
-      </div>
-      
-      <div class="flex justify-end space-x-3">
-        <button onclick="hideModal('unbanUserModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Cancel
-        </button>
-        <button onclick="confirmUnbanUser()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md">
-          Confirm Unban
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- User Detail Modal -->
-  <div id="userDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">User Details</h3>
-        <button onclick="hideModal('userDetailModal')" class="text-gray-500 hover:text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-1">
-          <div class="flex flex-col items-center">
-            <img id="detailUserImg" src="" alt="" class="w-32 h-32 rounded-full mb-4">
-            <h4 id="detailUserName" class="text-xl font-bold text-gray-900"></h4>
-            <div id="detailUserStatus" class="mt-2">
-              <!-- Status badge will be inserted here -->
-            </div>
-          </div>
-          
-          <div class="mt-6 space-y-2">
-            <div class="flex items-center">
-              <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span id="detailUserEmail" class="text-gray-700"></span>
-            </div>
-            <div class="flex items-center">
-              <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span id="detailUserJoinDate" class="text-gray-700"></span>
-            </div>
-            <div class="flex items-center">
-              <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span id="detailUserLocation" class="text-gray-700"></span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="md:col-span-2">
-          <div class="bg-gray-50 p-4 rounded-lg mb-6">
-            <h4 class="font-medium text-gray-900 mb-2">User Statistics</h4>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white p-3 rounded shadow-sm">
-                <p class="text-sm text-gray-500">Total Listings</p>
-                <p id="detailUserListings" class="text-xl font-bold text-gray-900">0</p>
-              </div>
-              <div class="bg-white p-3 rounded shadow-sm">
-                <p class="text-sm text-gray-500">Active Listings</p>
-                <p id="detailUserActiveListings" class="text-xl font-bold text-gray-900">0</p>
-              </div>
-              <div class="bg-white p-3 rounded shadow-sm">
-                <p class="text-sm text-gray-500">Total Reviews</p>
-                <p id="detailUserReviews" class="text-xl font-bold text-gray-900">0</p>
-              </div>
-              <div class="bg-white p-3 rounded shadow-sm">
-                <p class="text-sm text-gray-500">Average Rating</p>
-                <p id="detailUserRating" class="text-xl font-bold text-gray-900">0.0</p>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h4 class="font-medium text-gray-900 mb-2">Recent Activity</h4>
-            <div id="userActivityList" class="space-y-3">
-              <!-- Activity items will be inserted here -->
-              <div class="text-gray-500 text-sm">Loading activity...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="mt-6 flex justify-end space-x-3">
-        <button onclick="hideModal('userDetailModal')" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Success Notification -->
-  <div id="successNotification" class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-x-full transition-transform duration-300 z-50">
-    <div class="flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-      <span id="successMessage">Operation completed successfully!</span>
-    </div>
-  </div>
-
   <script>
-    // Global variables
-    let selectedUserId = null;
     let currentPage = 1;
-    const usersPerPage = 10;
-
     // Load data when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      loadUsers();
-      
-      // Setup event listeners
-      document.getElementById('user-search').addEventListener('input', () => loadUsers(true));
-      document.getElementById('status-filter').addEventListener('change', () => loadUsers(true));
-      document.getElementById('sort-by').addEventListener('change', () => loadUsers(true));
+    const transactionsPerPage = 10;
+    async function loadTransactions(resetPage = false) {
+      if (resetPage) currentPage = 1;
 
-    });
+      const searchQuery = document.getElementById('transaction-search').value;
+      const statusFilter = document.getElementById('transaction-status-filter').value;
+      const sortBy = document.getElementById('transaction-sort-by').value;
 
-    // Load users with filters
-    async function loadUsers(resetPage = false) {
-      if (resetPage) currentPage = 1; // 👈 Reset to first page if needed
-
-      const searchQuery = document.getElementById('user-search').value;
-      const statusFilter = document.getElementById('status-filter').value;
-      const sortBy = document.getElementById('sort-by').value;
+      const params = new URLSearchParams();
+      params.append('page', currentPage);
+      params.append('perPage', transactionsPerPage);
+      if (searchQuery) params.append('search', searchQuery);
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      params.append('sort', sortBy);
 
       try {
-        const tableBody = document.getElementById('users-table-body');
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-              Loading users...
-            </td>
-          </tr>
-        `;
+        const tableBody = document.getElementById('transactions-table-body');
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center px-6 py-4 text-gray-500">Loading...</td></tr>`;
 
-        const params = new URLSearchParams();
-        params.append('page', currentPage);
-        params.append('perPage', usersPerPage);
-        if (searchQuery) params.append('search', searchQuery);
-        if (statusFilter !== 'all') params.append('status', statusFilter);
-        params.append('sort', sortBy);
-
-        const response = await fetch(`/api/admin/users?${params.toString()}`);
+        const response = await fetch(`/api/transactions?${params.toString()}`);
         const data = await response.json();
 
-        updateUsersTable(data.users);
+        updateTransactionTable(data.transactions);
         updatePagination(data.total, data.perPage, data.currentPage);
-      } catch (error) {
-        console.error('Error loading users:', error);
-        document.getElementById('users-table-body').innerHTML = `
-          <tr>
-            <td colspan="6" class="px-6 py-4 text-center text-red-500">
-              Error loading users. Please try again.
-            </td>
-          </tr>
+      } catch (err) {
+        console.error(err);
+        document.getElementById('transactions-table-body').innerHTML = `
+          <tr><td colspan="7" class="text-center px-6 py-4 text-red-500">Failed to load transactions.</td></tr>
         `;
       }
     }
 
-    // Update users table with data
-    function updateUsersTable(users) {
-      const tableBody = document.getElementById('users-table-body');
+function updateTransactionTable(transactions) {
+  const tableBody = document.getElementById('transactions-table-body');
+  tableBody.innerHTML = '';
 
-      if (users.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-              No users found matching your criteria.
-            </td>
-          </tr>
-        `;
-        return;
+  if (transactions.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="7" class="text-center px-6 py-4 text-gray-500">No transactions found.</td></tr>`;
+    return;
+  }
+
+  transactions.forEach(tx => {
+    const itemName = tx.item_name || 'Unnamed Item';
+    const itemImage = tx.item_image || '/uploads/default-item.png';
+    const status = tx.status;
+    let actionButton = '';
+
+    if (status === 'Pending' && tx.seller_id === window.currentUserId) {
+      actionButton = `<button onclick="updateStatus(${tx.id}, 'Shipped')" class="text-blue-600 hover:text-blue-800 text-sm">Mark as Shipped</button>`;
+    } else if (status === 'Shipped' && tx.buyer_id === window.currentUserId) {
+      actionButton = `
+        <button onclick="updateStatus(${tx.id}, 'Completed')" class="text-green-600 hover:text-green-800 text-sm mr-2">Mark as Completed</button>
+        ${tx.warned ? `<button onclick="reportNotArrived(${tx.id})" class="text-red-600 hover:text-red-800 text-sm">Report Not Arrived</button>` : ''}
+      `;
+    }
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="px-6 py-4 text-center">
+        <img src="${itemImage}" alt="${itemName}" class="h-12 w-12 mx-auto object-cover rounded mb-1">
+        <div class="text-sm">${itemName}</div>
+      </td>
+      <td class="px-6 py-4 text-center">${tx.buyer_name}</td>
+      <td class="px-6 py-4 text-center">${tx.seller_name}</td>
+      <td class="px-6 py-4 text-center">₱${parseFloat(tx.price).toFixed(2)}</td>
+      <td class="px-6 py-4 text-center">${new Date(tx.created_at).toLocaleDateString()}</td>
+      <td class="px-6 py-4 text-center">
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBadgeClass(status)}">${status}</span>
+      </td>
+      <td class="px-6 py-4 text-center">${actionButton}</td>
+    `;
+    tableBody.appendChild(row);
+  });
+}
+
+    function getBadgeClass(status) {
+      switch (status.toLowerCase()) {
+        case 'pending': return 'bg-yellow-100 text-yellow-800';
+        case 'shipped': return 'bg-blue-100 text-blue-800';
+        case 'completed': return 'bg-green-100 text-green-800';
+        case 'refunded': return 'bg-red-100 text-red-800';
+        default: return 'bg-gray-100 text-gray-800';
       }
+    }
 
-      tableBody.innerHTML = '';
+    async function updateStatus(transactionId, newStatus) {
+      try {
+        const response = await fetch(`/api/transactions/${transactionId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ newStatus })
+        });
 
-      users.forEach(user => {
-        const profilePic = user.profilePic
-          ? `/uploads/${user.profilePic}` 
-          : '/uploads/defaultprofile.webp';
-        const row = document.createElement('tr');
+        const data = await response.json();
 
-        const joinDate = new Date(user.createdAt).toLocaleDateString();
-
-        // Set status badge based on user.status value
-        let statusBadge = '';
-        switch (user.status) {
-          case 'Admin':
-            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Admin</span>';
-            break;
-          case 'Banned':
-            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Banned</span>';
-            break;
-          case 'Active':
-            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>';
-            break;
-          default:
-            statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-600">Unverified</span>';
+        if (response.ok) {
+          showModal('statusUpdatedModal'); 
+          loadTransactions(); // Refresh the transaction table
+        } else {
+          alert(data.message || 'Failed to update status.');
         }
-
-        row.innerHTML = `
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex items-center">
-              <div class="flex-shrink-0 h-10 w-10">
-                <img class="h-10 w-10 rounded-full" src="${profilePic || '/uploads/defaultprofile.webp'}" alt="${user.name}">
-              </div>
-              <div class="ml-4">
-                <div class="text-sm font-medium text-gray-900">${user.name}</div>
-              </div>
-            </div>
-          </td>
-          <td class="text-center px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">${user.email}</div>
-          </td>
-          <td class="text-center px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-500">${joinDate}</div>
-          </td>
-          <td class="text-center px-6 py-4 whitespace-nowrap">
-            ${statusBadge}
-          </td>
-          <td class="text-center px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            ${user.reportCount || 0}
-          </td>
-          <td class="text-center px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-            ${user.status === 'Banned' ? 
-              `<button onclick="showUnbanUserModal('${user._id}', '${user.name}')" class="text-green-600 hover:text-green-900">Unban</button>` : 
-              `<button onclick="showBanUserModal('${user._id}', '${user.name}')" class="text-red-600 hover:text-red-900">Ban</button>`}
-          </td>
-        `;
-
-        tableBody.appendChild(row);
-      });
+      } catch (error) {
+        console.error('Error updating status:', error);
+        alert('An error occurred while updating the status.');
+      }
     }
 
-    // Update pagination controls
+    // Pagination function remains unchanged
     function updatePagination(totalItems, itemsPerPage, currentPage) {
       const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const paginationInfo = document.getElementById('pagination-info');
+      const paginationContainer = document.querySelector('[aria-label="Pagination"]');
 
-      // Update pagination info text
       const startItem = (currentPage - 1) * itemsPerPage + 1;
       const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-      document.getElementById('pagination-info').innerHTML = `
+
+      paginationInfo.innerHTML = `
         Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> results
       `;
 
-      // Update pagination buttons
-      const paginationContainer = document.querySelector('[aria-label="Pagination"]');
       paginationContainer.innerHTML = '';
 
-      // Previous Button
-      const prevButton = document.createElement('a');
-      prevButton.href = '#';
-      prevButton.className = 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
-      prevButton.innerHTML = `
-        <span class="sr-only">Previous</span>
-        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-        </svg>
-      `;
-      prevButton.onclick = (e) => {
+      // Previous
+      const prev = document.createElement('a');
+      prev.href = '#';
+      prev.className = 'relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
+      prev.innerHTML = `←`;
+      prev.onclick = e => {
         e.preventDefault();
-        prevPage();
+        if (currentPage > 1) {
+          currentPage--;
+          loadTransactions();
+        }
       };
-      if (currentPage === 1) {
-        prevButton.classList.add('opacity-50', 'pointer-events-none');
-      }
-      paginationContainer.appendChild(prevButton);
+      if (currentPage === 1) prev.classList.add('opacity-50', 'pointer-events-none');
+      paginationContainer.appendChild(prev);
 
-      // Page Numbers
+      // Page numbers
       const maxButtons = 5;
-      let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-      let end = Math.min(start + maxButtons - 1, totalPages);
-      if (end - start < maxButtons - 1) {
-        start = Math.max(1, end - maxButtons + 1);
-      }
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, start + maxButtons - 1);
+      if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
 
       for (let i = start; i <= end; i++) {
-        const pageButton = document.createElement('a');
-        pageButton.href = '#';
-        pageButton.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-          i === currentPage
-            ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
-            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-        }`;
-        pageButton.textContent = i;
+        const page = document.createElement('a');
+        page.href = '#';
+        page.textContent = i;
+        page.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium ${i === currentPage ? 'z-10 bg-primary-50 border-primary-500 text-primary-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`;
         if (i !== currentPage) {
-          pageButton.onclick = (e) => {
+          page.onclick = e => {
             e.preventDefault();
-            goToPage(i);
+            currentPage = i;
+            loadTransactions();
           };
         }
-        paginationContainer.appendChild(pageButton);
+        paginationContainer.appendChild(page);
       }
 
-      // Next Button
-      const nextButton = document.createElement('a');
-      nextButton.href = '#';
-      nextButton.className = 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
-      nextButton.innerHTML = `
-        <span class="sr-only">Next</span>
-        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-        </svg>
-      `;
-      nextButton.onclick = (e) => {
+      // Next
+      const next = document.createElement('a');
+      next.href = '#';
+      next.className = 'relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50';
+      next.innerHTML = `→`;
+      next.onclick = e => {
         e.preventDefault();
-        nextPage();
-      };
-      if (currentPage === totalPages) {
-        nextButton.classList.add('opacity-50', 'pointer-events-none');
-      }
-      paginationContainer.appendChild(nextButton);
-    }
-
-    // Show ban user modal
-    function showBanUserModal(userId, userName) {
-      selectedUserId = userId;
-      document.getElementById('banUserName').textContent = userName;
-      document.getElementById('banReason').value = '';
-      showModal('banUserModal');
-    }
-
-    // Confirm ban user
-    async function confirmBanUser() {
-      const reason = document.getElementById('banReason').value.trim();
-      if (!reason) {
-        showNotification('Please provide a reason for banning this user', false);
-        return;
-      }
-      
-      try {
-        const response = await fetch(`/api/admin/users/${selectedUserId}/ban`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ reason })
-        });
-        
-        if (response.ok) {
-          showNotification('User has been banned successfully');
-          hideModal('banUserModal');
-          loadUsers();
-        } else {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to ban user');
+        if (currentPage < totalPages) {
+          currentPage++;
+          loadTransactions();
         }
-      } catch (error) {
-        console.error('Error banning user:', error);
-        showNotification(error.message || 'Error banning user', false);
-      }
-    }
-
-    // Show unban user modal
-    function showUnbanUserModal(userId, userName) {
-      selectedUserId = userId;
-      document.getElementById('unbanUserName').textContent = userName;
-      showModal('unbanUserModal');
-    }
-
-    // Confirm unban user
-    async function confirmUnbanUser() {
-      try {
-        const response = await fetch(`/api/admin/users/${selectedUserId}/unban`, {
-          method: 'POST'
-        });
-        
-        if (response.ok) {
-          showNotification('User has been unbanned successfully');
-          hideModal('unbanUserModal');
-          loadUsers();
-        } else {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to unban user');
-        }
-      } catch (error) {
-        console.error('Error unbanning user:', error);
-        showNotification(error.message || 'Error unbanning user', false);
-      }
-    }
-
-    // Show modal
-    function showModal(modalId) {
-      document.getElementById(modalId).classList.remove('hidden');
-    }
-
-    // Hide modal
-    function hideModal(modalId) {
-      document.getElementById(modalId).classList.add('hidden');
-    }
-
-    // Show notification
-    function showNotification(message, isSuccess = true) {
-      const notification = document.getElementById('successNotification');
-      notification.className = isSuccess ? 
-        'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-x-0 transition-transform duration-300 z-50' :
-        'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-x-0 transition-transform duration-300 z-50';
-      
-      document.getElementById('successMessage').textContent = message;
-      
-      setTimeout(() => {
-        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg transform translate-x-full transition-transform duration-300 z-50';
-      }, 3000);
-    }
-
-    // Debounce function for search input
-    function debounce(func, wait) {
-      let timeout;
-      return function() {
-        const context = this, args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-          func.apply(context, args);
-        }, wait);
       };
+      if (currentPage === totalPages) next.classList.add('opacity-50', 'pointer-events-none');
+      paginationContainer.appendChild(next);
     }
 
-    // Pagination functions
-    function goToPage(page) {
-      currentPage = page;
-      loadUsers();
+    function showModal(id) {
+      document.getElementById(id).classList.remove('hidden');
     }
 
-    function nextPage() {
-      currentPage++;
-      loadUsers();
+    function hideModal(id) {
+      document.getElementById(id).classList.add('hidden');
     }
 
-    function prevPage() {
-      if (currentPage > 1) {
-        currentPage--;
-        loadUsers();
+
+    window.currentUserId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/get-session-data');
+        if (!res.ok) throw new Error('Not logged in');
+        const user = await res.json();
+        window.currentUserId = user.id;
+
+        loadTransactions();
+      } catch (err) {
+        console.error('Failed to fetch session data:', err);
+        alert('You are not logged in.');
       }
+
+      // Filters
+      document.getElementById('transaction-search').addEventListener('input', () => loadTransactions(true));
+      document.getElementById('transaction-status-filter').addEventListener('change', () => loadTransactions(true));
+      document.getElementById('transaction-sort-by').addEventListener('change', () => loadTransactions(true));
+    });
+
+  function reportNotArrived(txId) {
+    document.getElementById('reportTransactionId').value = txId;
+    document.getElementById('productReportReason').value = ''; // Clear previous input
+    showModal('reportProductModal');
+  }
+
+  function submitProductReport(event) {
+    event.preventDefault();
+
+    const txId = document.getElementById('reportTransactionId').value;
+    const reason = document.getElementById('productReportReason').value.trim();
+
+    if (!reason) {
+      alert('Please enter a reason for your report.');
+      return;
     }
+
+    fetch(`/api/transactions/${txId}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        hideModal('reportProductModal');
+        showModal('reportSuccessModal');
+        loadTransactions(); // Refresh table
+      } else {
+        alert(data.message || 'Failed to report the issue.');
+      }
+    })
+    .catch(() => alert('Error reporting the issue.'));
+  }
+
+
+
   </script>
 </body>
 </html>
