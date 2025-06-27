@@ -414,10 +414,10 @@ function updateTransactionTable(transactions) {
       } else if (tx.buyer_id === window.currentUserId) {
         actionButton = `<button onclick="promptCancelTransaction(${tx.id})" class="text-red-600 hover:text-red-800 text-sm">Cancel</button>`;
       }
-    } else if (status === 'Shipped' && tx.buyer_id === window.currentUserId) {
+    } else if ((status === 'Shipped' || status === 'Disputed') && tx.buyer_id === window.currentUserId) {
       actionButton = `
         <button onclick="updateStatus(${tx.id}, 'Completed')" class="text-green-600 hover:text-green-800 text-sm mr-2">Mark as Completed</button>
-        ${tx.warned ? `<button onclick="reportNotArrived(${tx.id})" class="text-red-600 hover:text-red-800 text-sm">Report Not Arrived</button>` : ''}
+        ${tx.warned && status === 'Shipped' ? `<button onclick="reportNotArrived(${tx.id})" class="text-red-600 hover:text-red-800 text-sm">Report Not Arrived</button>` : ''}
       `;
     }
 
@@ -439,7 +439,6 @@ function updateTransactionTable(transactions) {
     tableBody.appendChild(row);
   });
 }
-
 
 function getBadgeClass(status) {
   switch (status.toLowerCase()) {

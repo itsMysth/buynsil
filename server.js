@@ -1958,7 +1958,11 @@ app.put('/api/transactions/:id/status', (req, res) => {
     let allowed = false;
     if (tx.status === 'Pending' && newStatus === 'Shipped' && isSeller) {
       allowed = true;
-    } else if (tx.status === 'Shipped' && newStatus === 'Completed' && isBuyer) {
+    } else if (
+      (tx.status === 'Shipped' || tx.status === 'Disputed') &&
+      newStatus === 'Completed' &&
+      isBuyer
+    ) {
       allowed = true;
     }
 
@@ -1966,13 +1970,18 @@ app.put('/api/transactions/:id/status', (req, res) => {
       return res.status(403).json({ message: 'You are not authorized to perform this action.' });
     }
 
-    const updateStatus = `UPDATE transactions SET status = ?, updated_at = NOW() WHERE id = ?`;
+    const updateStatus = `
+      UPDATE transactions
+      SET status = ?, updated_at = NOW(),
+          resolved = CASE WHEN status = 'Disputed' THEN 1 ELSE resolved END
+      WHERE id = ?
+    `;
 
     db.query(updateStatus, [newStatus, transactionId], (err2) => {
       if (err2) return res.status(500).json({ message: 'Failed to update status.' });
 
-      // Only pay the seller if payment method is wallet and buyer marked as completed
-      if (tx.payment_method === 'wallet' && newStatus === 'Completed') {
+      // Credit the seller regardless of payment method when completed
+      if (newStatus === 'Completed') {
         const ensureWallet = `
           INSERT INTO wallets (user_id, balance)
           VALUES (?, 0)
@@ -2000,7 +2009,6 @@ app.put('/api/transactions/:id/status', (req, res) => {
     });
   });
 });
-
 
 
 setInterval(() => {
@@ -2172,16 +2180,37 @@ app.post('/api/admin/disputes/:id/refund', (req, res) => {
     const buyerId = transaction.buyer_id;
     const refundAmount = transaction.price;
     const itemId = transaction.item_id;
+    const paymentMethod = transaction.payment_method;
 
-    // Step 1: Refund the buyer
-    const refundQuery = 'UPDATE wallets SET balance = balance + ? WHERE user_id = ?';
-    db.query(refundQuery, [refundAmount, buyerId], (err) => {
-      if (err) {
-        console.error('Error refunding wallet:', err);
-        return res.status(500).json({ success: false, message: 'Failed to refund wallet.' });
-      }
+    // Step 1: Refund only if paid via wallet
+    if (paymentMethod === 'wallet') {
+      const ensureWallet = `
+        INSERT INTO wallets (user_id, balance)
+        VALUES (?, 0)
+        ON DUPLICATE KEY UPDATE balance = balance
+      `;
+      db.query(ensureWallet, [buyerId], (err) => {
+        if (err) {
+          console.error('Error ensuring buyer wallet:', err);
+          return res.status(500).json({ success: false, message: 'Failed to ensure buyer wallet.' });
+        }
 
-      // Step 2: Mark transaction as refunded and resolved
+        const refundQuery = 'UPDATE wallets SET balance = balance + ? WHERE user_id = ?';
+        db.query(refundQuery, [refundAmount, buyerId], (err) => {
+          if (err) {
+            console.error('Error refunding wallet:', err);
+            return res.status(500).json({ success: false, message: 'Failed to refund wallet.' });
+          }
+
+          continueRefundFlow();
+        });
+      });
+    } else {
+      // Skip refund, just proceed with updating status and relisting
+      continueRefundFlow();
+    }
+
+    function continueRefundFlow() {
       const updateTransactionQuery = `
         UPDATE transactions
         SET status = 'Refunded', resolved = 1
@@ -2193,7 +2222,6 @@ app.post('/api/admin/disputes/:id/refund', (req, res) => {
           return res.status(500).json({ success: false, message: 'Failed to update transaction status.' });
         }
 
-        // Step 3: Make the listing active again
         const updateListingQuery = `
           UPDATE listings
           SET status = 'Active'
@@ -2208,9 +2236,10 @@ app.post('/api/admin/disputes/:id/refund', (req, res) => {
           res.json({ success: true });
         });
       });
-    });
+    }
   });
 });
+
 
 
 // POST: Complete transaction (pay seller)
